@@ -8,7 +8,8 @@ import {
   todayDateString, 
   nowTimeString, 
   getNextPunchType,
-  getDisplayPunchType
+  getDisplayPunchType,
+  getPunchLabel
 } from './utils/timeLogic';
 
 import NameRegistration from './components/NameRegistration';
@@ -46,6 +47,7 @@ function EmployeeApp() {
   const [view, setView] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [pendingPunchType, setPendingPunchType] = useState(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     setUser(getCurrentUser());
