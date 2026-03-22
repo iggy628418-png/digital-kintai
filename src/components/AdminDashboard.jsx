@@ -84,8 +84,12 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
     await reload();
   };
 
+  // 'pending' or 'approved'
+  const [activeTab, setActiveTab] = useState('pending');
+
   const filteredRecords = records
     .filter(r => r.date.startsWith(filterMonth))
+    .filter(r => activeTab === 'pending' ? !r.approved : r.approved)
     .sort((a, b) => b.date.localeCompare(a.date));
 
   return (
@@ -120,14 +124,6 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
             onChange={(e) => setFilterMonth(e.target.value)}
             style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)', boxSizing: 'border-box' }}
           />
-          <button
-            onClick={onViewReport}
-            className="btn btn-outline"
-            style={{ marginTop: '0.75rem', fontSize: '0.875rem' }}
-          >
-            <BarChart2 size={16} />
-            {filterMonth} の月次集計レポートを見る
-          </button>
         </div>
 
         {/* QRコード表示エリア */}
@@ -136,9 +132,6 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
             <QrCode size={18} color="var(--secondary)" />
             <span style={{ fontWeight: 700 }}>打刻用QRコード</span>
           </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-            <strong>QRコードはこれ1枚だけでOK！</strong> スキャンのたびに、出勤・退勤が自動で切り替わります（朝なら出勤、昼なら退勤…と自動で進みます）。
-          </p>
           <button
             onClick={onViewQRCode}
             className="btn btn-primary"
@@ -149,47 +142,65 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
           </button>
         </div>
 
-        {/* 登録従業員の管理（追加分） */}
-        <div className="card" style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        {/* 登録従業員の管理 */}
+        <details className="card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
+          <summary style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
             <Users size={18} color="var(--primary)" />
-            <span style={{ fontWeight: 700 }}>登録従業員の管理</span>
-          </div>
-          <div style={{ display: 'grid', gap: '0.5rem' }}>
+            <span>登録従業員の管理（解除など）</span>
+          </summary>
+          <div style={{ display: 'grid', gap: '0.5rem', marginTop: '1rem' }}>
             {employees.length === 0 ? (
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>登録されている従業員はいません</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>登録済みはいません</p>
             ) : (
               employees.map(emp => (
                 <div key={emp.id} style={{ 
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                  padding: '0.75rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' 
+                  padding: '0.6rem 0.75rem', background: '#fff', borderRadius: '0.6rem', border: '1px solid #eee' 
                 }}>
-                  <span style={{ fontWeight: 700 }}>{emp.name}</span>
-                  <button 
-                    onClick={() => handleDeleteEmployee(emp)}
-                    title="この人を削除"
-                    style={{ 
-                      background: 'none', border: 'none', cursor: 'pointer', 
-                      display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#ef4444' 
-                    }}
-                  >
-                    <Trash2 size={16} />
-                    解除
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{emp.name}</span>
+                  <button onClick={() => handleDeleteEmployee(emp)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                    <Trash2 size={14} /> 解除
                   </button>
                 </div>
               ))
             )}
           </div>
+        </details>
+
+        {/* タブ切り替え */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', background: '#f1f5f9', padding: '0.3rem', borderRadius: '0.75rem' }}>
+          <button
+            onClick={() => setActiveTab('pending')}
+            style={{
+              flex: 1, padding: '0.6rem', borderRadius: '0.6rem', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem',
+              background: activeTab === 'pending' ? 'white' : 'transparent',
+              boxShadow: activeTab === 'pending' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              color: activeTab === 'pending' ? 'var(--primary)' : 'var(--text-muted)'
+            }}
+          >
+            未承認 ({records.filter(r => r.date.startsWith(filterMonth) && !r.approved).length})
+          </button>
+          <button
+            onClick={() => setActiveTab('approved')}
+            style={{
+              flex: 1, padding: '0.6rem', borderRadius: '0.6rem', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem',
+              background: activeTab === 'approved' ? 'white' : 'transparent',
+              boxShadow: activeTab === 'approved' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              color: activeTab === 'approved' ? 'var(--primary)' : 'var(--text-muted)'
+            }}
+          >
+            承認済み ({records.filter(r => r.date.startsWith(filterMonth) && r.approved).length})
+          </button>
         </div>
 
-        <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Users size={20} />
-          勤務記録一覧（{filteredRecords.length}件）
+        <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+          {activeTab === 'pending' ? <Clock size={18} /> : <CheckCircle size={18} color="#10b981" />}
+          {activeTab === 'pending' ? '承認待ちの記録' : '承認済みの記録'}（{filteredRecords.length}件）
         </h3>
 
         {filteredRecords.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-            <p>この月の記録はまだありません</p>
+            <p>{activeTab === 'pending' ? '未承認の記録はありません' : '承認済みの記録はありません'}</p>
           </div>
         ) : (
           filteredRecords.map(record => {
