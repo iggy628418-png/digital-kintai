@@ -152,7 +152,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
             <p>従業員が登録されていません</p>
           </div>
         ) : (
-          summaries.map(({ emp, dailyData, totalMinutes, workDays }) => (
+          summaries.map(({ emp, dailyData, totalMinutes, totalBreakMinutes, workDays }) => (
             <div key={emp.id} className="card report-card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
               {/* 従業員名 + 月合計 */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
