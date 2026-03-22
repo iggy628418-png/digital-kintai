@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  getCurrentUser, 
+  getCurrentUser,
+  clearCurrentUser,
+  findEmployeeById, 
   getRecordByDate, 
   getRecordsByEmployee,
   upsertRecord 
@@ -59,6 +61,17 @@ function EmployeeApp() {
 
   const loadData = async (userId) => {
     if (!userId) return;
+    
+    // Check if employee still exists in database
+    const employee = await findEmployeeById(userId);
+    if (!employee) {
+      // If not found, it means the admin deleted this account.
+      // Clear local storage and reset to name registration.
+      clearCurrentUser();
+      setUser(null);
+      return;
+    }
+    
     const records = await getRecordsByEmployee(userId);
     const today = todayDateString();
     const todayRec = await getRecordByDate(userId, today);
