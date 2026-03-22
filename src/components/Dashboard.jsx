@@ -1,44 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardCheck, LogOut, Clock, Calendar, ChevronRight, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { 
-  getRecordByDate, 
-  getRecordsByEmployee, 
   clearCurrentUser 
 } from '../utils/storage';
 import { 
   todayDateString, 
-  currentYearMonth, 
-  calcDailyMinutes, 
-  calcMonthlyMinutes, 
   minutesToDisplay,
-  getCurrentStatusLabel,
-  getNextPunchType,
-  getDisplayPunchType,
-  getPunchLabel,
+  calcDailyMinutes,
   getPunchTheme
 } from '../utils/timeLogic';
 
-export default function Dashboard({ user, onPunch, onViewHistory }) {
-  const [todayRecord, setTodayRecord] = useState(null);
-  const [monthlyMinutes, setMonthlyMinutes] = useState(0);
+export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, onViewHistory }) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    
-    // データの読み込み
-    const loadData = async () => {
-      const records = await getRecordsByEmployee(user.id);
-      const today = todayDateString();
-      const todayRec = await getRecordByDate(user.id, today);
-      setTodayRecord(todayRec);
-      setMonthlyMinutes(calcMonthlyMinutes(records, currentYearMonth()));
-    };
-
-    loadData();
-
     return () => clearInterval(timer);
-  }, [user.id]);
+  }, []);
 
   const nextPunch = getNextPunchType(todayRecord);
   const displayPunch = getDisplayPunchType(todayRecord);

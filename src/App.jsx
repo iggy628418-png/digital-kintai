@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   getCurrentUser, 
   getRecordByDate, 
+  getRecordsByEmployee,
   upsertRecord 
 } from './utils/storage';
 import { 
   todayDateString, 
   nowTimeString, 
+  currentYearMonth,
+  calcMonthlyMinutes,
   getNextPunchType,
   getDisplayPunchType,
   getPunchLabel,
@@ -50,16 +53,33 @@ function EmployeeApp() {
   const [punchResult, setPunchResult] = useState(null);
   const [pendingPunchType, setPendingPunchType] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
+  
+  const [todayRecord, setTodayRecord] = useState(null);
+  const [monthlyMinutes, setMonthlyMinutes] = useState(0);
+
+  const loadData = async (userId) => {
+    if (!userId) return;
+    const records = await getRecordsByEmployee(userId);
+    const today = todayDateString();
+    const todayRec = await getRecordByDate(userId, today);
+    setTodayRecord(todayRec);
+    setMonthlyMinutes(calcMonthlyMinutes(records, currentYearMonth()));
+  };
 
   useEffect(() => {
-    setUser(getCurrentUser());
+    const user = getCurrentUser();
+    setUser(user);
+    if (user) loadData(user.id);
     setLoading(false);
   }, []);
 
   if (loading) return null;
 
   if (!user) {
-    return <NameRegistration onComplete={(u) => setUser(u)} />;
+    return <NameRegistration onComplete={(u) => {
+      setUser(u);
+      loadData(u.id);
+    }} />;
   }
 
   // 打刻種別を選択してスキャナーを表示
@@ -103,9 +123,8 @@ function EmployeeApp() {
     setPunchResult({ type, label, message, time: nowTimeString() });
     
     setPendingPunchType(null);
-    // ダッシュボードを再読み込み
-    setView('refresh');
-    setTimeout(() => setView('dashboard'), 0);
+    // データを再読み込み
+    await loadData(user.id);
   };
 
   return (
@@ -113,6 +132,8 @@ function EmployeeApp() {
       {view === 'dashboard' && (
         <Dashboard 
           user={user} 
+          todayRecord={todayRecord}
+          monthlyMinutes={monthlyMinutes}
           onPunch={handlePunch}
           onViewHistory={() => setView('history')}
         />
