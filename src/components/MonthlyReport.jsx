@@ -3,6 +3,7 @@ import { ArrowLeft, Download, Printer, BarChart2 } from 'lucide-react';
 import { getEmployees, getRecords } from '../utils/storage';
 import {
   calcDailyMinutes,
+  calcBreakMinutes,
   minutesToDisplay,
   formatDateJP,
 } from '../utils/timeLogic';
@@ -50,18 +51,20 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         afternoonIn:  rec?.afternoonIn  || '',
         afternoonOut: rec?.afternoonOut || '',
         minutes: rec ? calcDailyMinutes(rec) : 0,
+        breakMinutes: rec ? calcBreakMinutes(rec) : 0,
         approved: rec?.approved || false,
         hasData: !!rec,
       };
     });
     const totalMinutes = dailyData.reduce((s, d) => s + d.minutes, 0);
+    const totalBreakMinutes = dailyData.reduce((s, d) => s + d.breakMinutes, 0);
     const workDays = dailyData.filter(d => d.hasData).length;
-    return { emp, dailyData, totalMinutes, workDays };
+    return { emp, dailyData, totalMinutes, totalBreakMinutes, workDays };
   });
 
   // CSV ダウンロード
   const downloadCSV = () => {
-    const header = ['従業員名', '日付', '午前出勤', '午前退勤', '午後出勤', '午後退勤', '勤務時間', '承認'];
+    const header = ['従業員名', '日付', '出勤', '休憩入り', '休憩戻り', '退勤', '休憩時間', '実労働時間', '承認'];
     const rows = [];
     summaries.forEach(({ emp, dailyData }) => {
       dailyData.filter(d => d.hasData).forEach(d => {
@@ -72,6 +75,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           d.morningOut,
           d.afternoonIn,
           d.afternoonOut,
+          minutesToDisplay(d.breakMinutes),
           minutesToDisplay(d.minutes),
           d.approved ? '承認済み' : '未承認',
         ]);
@@ -168,11 +172,12 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                   <thead>
                     <tr style={{ background: '#f1f5f9' }}>
                       <th style={th}>日付</th>
-                      <th style={th}>午前出勤</th>
-                      <th style={th}>午前退勤</th>
-                      <th style={th}>午後出勤</th>
-                      <th style={th}>午後退勤</th>
-                      <th style={th}>勤務時間</th>
+                      <th style={th}>出勤</th>
+                      <th style={th}>休憩入り</th>
+                      <th style={th}>休憩戻り</th>
+                      <th style={th}>退勤</th>
+                      <th style={th}>休憩</th>
+                      <th style={th}>実働</th>
                       <th style={th}>状態</th>
                     </tr>
                   </thead>
@@ -184,6 +189,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                         <td style={{ ...td, textAlign: 'center' }}>{d.morningOut   || '—'}</td>
                         <td style={{ ...td, textAlign: 'center' }}>{d.afternoonIn  || '—'}</td>
                         <td style={{ ...td, textAlign: 'center' }}>{d.afternoonOut || '—'}</td>
+                        <td style={{ ...td, textAlign: 'center', color: '#db2777' }}>{d.breakMinutes > 0 ? minutesToDisplay(d.breakMinutes) : '—'}</td>
                         <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: 'var(--primary)' }}>{minutesToDisplay(d.minutes)}</td>
                         <td style={{ ...td, textAlign: 'center' }}>
                           <span style={{
@@ -202,7 +208,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                     ))}
                     {dailyData.filter(d => d.hasData).length === 0 && (
                       <tr>
-                        <td colSpan={7} style={{ ...td, textAlign: 'center', color: 'var(--text-muted)', padding: '1rem' }}>
+                        <td colSpan={8} style={{ ...td, textAlign: 'center', color: 'var(--text-muted)', padding: '1rem' }}>
                           この月の記録はありません
                         </td>
                       </tr>
@@ -212,6 +218,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                     <tr style={{ background: '#eff6ff', fontWeight: 700 }}>
                       <td style={td}>合計</td>
                       <td colSpan={4} style={{ ...td, textAlign: 'center', color: 'var(--text-muted)' }}>{workDays}日</td>
+                      <td style={{ ...td, textAlign: 'center', color: '#db2777' }}>{minutesToDisplay(totalBreakMinutes)}</td>
                       <td style={{ ...td, textAlign: 'center', color: 'var(--primary)' }}>{minutesToDisplay(totalMinutes)}</td>
                       <td style={td}></td>
                     </tr>

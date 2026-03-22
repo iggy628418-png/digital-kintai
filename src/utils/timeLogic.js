@@ -141,6 +141,15 @@ export function calcDailyMinutes(record) {
   return total > 0 ? total : 0;
 }
 
+// 休憩時間を分単位で計算 (morningOut 〜 afternoonIn)
+export function calcBreakMinutes(record) {
+  if (!record || !record.morningOut || !record.afternoonIn) return 0;
+  const bStart = timeToMinutes(record.morningOut);
+  const bEnd = timeToMinutes(record.afternoonIn);
+  const diff = bEnd - bStart;
+  return diff > 0 ? diff : 0;
+}
+
 // 月間の合計勤務時間を分単位で計算
 export function calcMonthlyMinutes(records, yearMonth) {
   // yearMonth = 'YYYY-MM'
