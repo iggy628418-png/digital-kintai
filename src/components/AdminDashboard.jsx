@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2 } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode } from 'lucide-react';
 import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord } from '../utils/storage';
 import { formatDateJP, calcDailyMinutes, minutesToDisplay } from '../utils/timeLogic';
 
@@ -80,9 +80,14 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
         <span className="header-title" style={{ background: 'white', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           管理者メニュー
         </span>
-        <button onClick={onViewReport} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <BarChart2 size={24} color="white" />
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button onClick={onViewQRCode} title="QRコードを表示" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            <QrCode size={24} color="white" />
+          </button>
+          <button onClick={onViewReport} title="レポートを表示" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            <BarChart2 size={24} color="white" />
+          </button>
+        </div>
       </header>
 
       <main style={{ padding: '1rem' }}>
@@ -105,6 +110,25 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
           >
             <BarChart2 size={16} />
             {filterMonth} の月次集計レポートを見る
+          </button>
+        </div>
+
+        {/* QRコード表示エリア */}
+        <div className="card" style={{ marginBottom: '1.5rem', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <QrCode size={18} color="var(--secondary)" />
+            <span style={{ fontWeight: 700 }}>打刻用QRコード</span>
+          </div>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+            従業員がスマホで読み取るためのQRコードを画面に表示、または印刷します。
+          </p>
+          <button
+            onClick={onViewQRCode}
+            className="btn btn-primary"
+            style={{ background: 'var(--secondary)', fontSize: '0.875rem' }}
+          >
+            <QrCode size={18} />
+            QRコードを表示・印刷する
           </button>
         </div>
 
