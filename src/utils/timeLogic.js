@@ -53,13 +53,32 @@ export function getDisplayPunchType(record) {
 // 打刻タイプの日本語ラベル
 export function getPunchLabel(type) {
   const labels = {
-    morningIn: '午前 出勤',
-    morningOut: '午前 退勤',
-    afternoonIn: '午後 出勤',
-    afternoonOut: '午後 退勤',
-    done: '本日の打刻完了',
+    morningIn: '出勤',
+    morningOut: '休憩に入る',
+    afternoonIn: '休憩終了',
+    afternoonOut: '退勤',
+    done: '打刻完了',
   };
   return labels[type] || type;
+}
+
+// 打刻タイプのテーマカラー
+export function getPunchTheme(type) {
+  if (type === 'morningIn' || type === 'afternoonOut') {
+    return { 
+      color: '#ffffff', 
+      bgColor: 'linear-gradient(135deg, #2563eb, #1d4ed8)', // Blue
+      borderColor: '#1e40af'
+    };
+  }
+  if (type === 'morningOut' || type === 'afternoonIn') {
+    return { 
+      color: '#ffffff', 
+      bgColor: 'linear-gradient(135deg, #ec4899, #db2777)', // Pink
+      borderColor: '#be185d'
+    };
+  }
+  return { color: '#64748b', bgColor: '#f1f5f9', borderColor: '#e2e8f0' };
 }
 
 // 現在の状態のラベル

@@ -108,14 +108,71 @@ export default function Dashboard({ user, onPunch, onViewHistory }) {
           </div>
         </div>
 
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            <Clock size={20} color="var(--primary)" />
-            <h3 style={{ fontWeight: 700 }}>現在の状態：{getCurrentStatusLabel(todayRecord)}</h3>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <Clock size={18} color="var(--primary)" />
+              本日の記録状況
+            </h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem', marginBottom: '1rem' }}>
+              {[
+                { label: '出勤', key: 'morningIn' },
+                { label: '休憩入', key: 'morningOut' },
+                { label: '休憩終', key: 'afternoonIn' },
+                { label: '退勤', key: 'afternoonOut' }
+              ].map((item) => (
+                <div key={item.key} style={{ 
+                  textAlign: 'center', 
+                  padding: '0.5rem 0.2rem', 
+                  borderRadius: '0.5rem',
+                  background: todayRecord?.[item.key] ? '#f1f5f9' : '#ffffff',
+                  border: todayRecord?.[item.key] ? '1px solid #e2e8f0' : '1px dashed #cbd5e1',
+                  opacity: todayRecord?.[item.key] ? 1 : 0.5
+                }}>
+                  <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>{item.label}</p>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 800, color: todayRecord?.[item.key] ? 'var(--text-main)' : '#94a3b8' }}>
+                    {todayRecord?.[item.key] || '--:--'}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {todayRecord?.approved ? (
-            /* ===== 承認済みバナー ===== */
+          {!todayRecord?.approved && !isDone && (
+            <div style={{ position: 'relative' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={onPunch}
+                style={{ 
+                  padding: '1.75rem', 
+                  fontSize: '1.4rem', 
+                  gap: '0.75rem',
+                  background: getPunchTheme(displayPunch).bgColor,
+                  border: `1px solid ${getPunchTheme(displayPunch).borderColor}`,
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <Clock size={28} />
+                {getPunchLabel(displayPunch)}を打刻
+              </button>
+              {displayPunch.includes('Out') && (
+                <div style={{ 
+                  textAlign: 'center', 
+                  marginTop: '0.75rem', 
+                  fontSize: '0.8rem', 
+                  color: 'var(--text-muted)',
+                  animation: 'pulse 2s infinite'
+                }}>
+                  休憩や退勤の時はこちらを押してください
+                </div>
+              )}
+            </div>
+          )}
+
+          {todayRecord?.approved && (
             <div style={{
               background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
               border: '2px solid #10b981',
@@ -124,28 +181,17 @@ export default function Dashboard({ user, onPunch, onViewHistory }) {
               textAlign: 'center',
             }}>
               <ShieldCheck size={40} color="#059669" style={{ marginBottom: '0.5rem' }} />
-              <p style={{ fontWeight: 800, fontSize: '1.1rem', color: '#065f46' }}>管理者に承認されました</p>
-              <p style={{ fontSize: '0.75rem', color: '#047857', marginTop: '0.25rem' }}>この日の勤怠は確定しています</p>
-            </div>
-          ) : !isDone ? (
-            /* ===== 打刻ボタン ===== */
-            <button 
-              className="btn btn-primary" 
-              onClick={onPunch}
-              style={{ padding: '1.5rem', fontSize: '1.25rem', gap: '0.75rem' }}
-            >
-              <Clock size={24} />
-              QRスキャンして{getPunchLabel(displayPunch)}
-            </button>
-          ) : (
-            /* ===== 全打刻完了 ===== */
-            <div style={{ textAlign: 'center', padding: '1rem' }}>
-              <CheckCircle2 size={36} color="var(--secondary)" style={{ marginBottom: '0.5rem' }} />
-              <p style={{ color: 'var(--secondary)', fontWeight: 700 }}>本日の勤務記録はすべて完了しました</p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>管理者の承認をお待ちください</p>
+              <p style={{ fontWeight: 800, fontSize: '1.1rem', color: '#065f46' }}>勤怠確定済み</p>
             </div>
           )}
-        </div>
+
+          {isDone && !todayRecord?.approved && (
+            <div style={{ textAlign: 'center', padding: '1rem' }}>
+              <CheckCircle2 size={36} color="var(--secondary)" style={{ marginBottom: '0.5rem' }} />
+              <p style={{ color: 'var(--secondary)', fontWeight: 700 }}>本日の全ての打刻が完了しました</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>お疲れ様でした！</p>
+            </div>
+          )}
 
         <button className="btn btn-outline" onClick={onViewHistory}>
           <Calendar size={18} />
