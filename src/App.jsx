@@ -62,17 +62,19 @@ function EmployeeApp() {
   const loadData = async (userId) => {
     if (!userId) return;
     
-/*
-    // Check if employee still exists in database
-    const employee = await findEmployeeById(userId);
-    if (!employee) {
-      // If not found, it means the admin deleted this account.
-      // Clear local storage and reset to name registration.
-      clearCurrentUser();
-      setUser(null);
-      return;
+    // Check if employee still exists in database (Admin deletion sync)
+    try {
+      if (navigator.onLine) {
+        const employee = await findEmployeeById(userId);
+        if (!employee) {
+          clearCurrentUser();
+          setUser(null);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Account verification failed:", e);
     }
-*/
     
     const records = await getRecordsByEmployee(userId);
     const today = todayDateString();
