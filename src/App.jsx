@@ -62,6 +62,7 @@ function EmployeeApp() {
   const loadData = async (userId) => {
     if (!userId) return;
     
+/*
     // Check if employee still exists in database
     const employee = await findEmployeeById(userId);
     if (!employee) {
@@ -71,6 +72,7 @@ function EmployeeApp() {
       setUser(null);
       return;
     }
+*/
     
     const records = await getRecordsByEmployee(userId);
     const today = todayDateString();
