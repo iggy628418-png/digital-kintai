@@ -54,8 +54,8 @@ export function getDisplayPunchType(record) {
 export function getPunchLabel(type) {
   const labels = {
     morningIn: '出勤',
-    morningOut: '休憩に入る',
-    afternoonIn: '休憩終了',
+    morningOut: '休憩入り',
+    afternoonIn: '休憩戻り',
     afternoonOut: '退勤',
     done: '打刻完了',
   };
@@ -83,15 +83,10 @@ export function getPunchTheme(type) {
 
 // 現在の状態のラベル
 export function getCurrentStatusLabel(record) {
-  const next = getNextPunchType(record);
-  const statusLabels = {
-    morningIn: '未出勤',
-    morningOut: '午前 勤務中',
-    afternoonIn: '午前 退勤済み',
-    afternoonOut: '午後 勤務中',
-    done: '本日の勤務完了',
-  };
-  return statusLabels[next] || '不明';
+  if (!record || !record.morningIn) return '未出勤';
+  if (record.afternoonOut) return '退勤済み';
+  if (record.morningOut && !record.afternoonIn) return '休憩中';
+  return '勤務中';
 }
 
 // HH:MM を分数に変換
@@ -111,24 +106,28 @@ export function minutesToDisplay(totalMinutes) {
   return `${h}時間${m}分`;
 }
 
-// 1日の勤務時間を分単位で計算
+// 1日の勤務時間を分単位で計算 (休憩を考慮)
 export function calcDailyMinutes(record) {
-  if (!record) return 0;
-  let total = 0;
+  if (!record || !record.morningIn) return 0;
+  
+  const inT = timeToMinutes(record.morningIn);
+  const outT = timeToMinutes(record.afternoonOut || record.morningOut || record.afternoonIn);
+  
+  if (!outT || outT <= inT) return 0;
 
-  // 午前
-  if (record.morningIn && record.morningOut) {
-    const diff = timeToMinutes(record.morningOut) - timeToMinutes(record.morningIn);
-    if (diff > 0) total += diff;
+  let total = outT - inT;
+  
+  // 休憩時間を引く (morningOut 〜 afternoonIn の間)
+  if (record.morningOut && record.afternoonIn) {
+    const bStart = timeToMinutes(record.morningOut);
+    const bEnd = timeToMinutes(record.afternoonIn);
+    const bDiff = bEnd - bStart;
+    if (bDiff > 0) {
+      total -= bDiff;
+    }
   }
-
-  // 午後
-  if (record.afternoonIn && record.afternoonOut) {
-    const diff = timeToMinutes(record.afternoonOut) - timeToMinutes(record.afternoonIn);
-    if (diff > 0) total += diff;
-  }
-
-  return total;
+  
+  return total > 0 ? total : 0;
 }
 
 // 月間の合計勤務時間を分単位で計算

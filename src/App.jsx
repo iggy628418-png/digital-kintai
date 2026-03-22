@@ -45,7 +45,7 @@ function EmployeeApp() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('dashboard');
   const [loading, setLoading] = useState(true);
-  const [showScanner, setShowScanner] = useState(false);
+  const [pendingPunchType, setPendingPunchType] = useState(null);
 
   useEffect(() => {
     setUser(getCurrentUser());
@@ -58,8 +58,9 @@ function EmployeeApp() {
     return <NameRegistration onComplete={(u) => setUser(u)} />;
   }
 
-  // 打刻ボタン押下：スキャナーを表示
-  const handlePunch = () => {
+  // 打刻種別を選択してスキャナーを表示
+  const handlePunch = (type) => {
+    setPendingPunchType(type);
     setShowScanner(true);
   };
 
@@ -67,6 +68,8 @@ function EmployeeApp() {
   const handleScan = async (decodedText) => {
     setShowScanner(false);
     
+    if (!pendingPunchType) return;
+
     const today = todayDateString();
     const record = (await getRecordByDate(user.id, today)) || { 
       employeeId: user.id, 
@@ -86,23 +89,14 @@ function EmployeeApp() {
       return;
     }
 
-    const punchType = getNextPunchType(record);
-    if (punchType === 'done') {
-      alert('本日の打刻（4回分）は全て完了しています。');
-      return;
-    }
+    const type = pendingPunchType;
+    const label = getPunchLabel(type);
 
-    const punchLabels = {
-      morningIn: '午前 出勤',
-      morningOut: '午前 退勤',
-      afternoonIn: '午後 出勤',
-      afternoonOut: '午後 退勤',
-    };
-
-    const newRecord = { ...record, [punchType]: nowTimeString() };
+    const newRecord = { ...record, [type]: nowTimeString() };
     await upsertRecord(newRecord);
-    alert(`【${punchLabels[punchType]}】\n${nowTimeString()} に打刻しました！`);
+    alert(`【${label}】\n${nowTimeString()} に打刻しました！`);
     
+    setPendingPunchType(null);
     // ダッシュボードを再読み込み
     setView('refresh');
     setTimeout(() => setView('dashboard'), 0);

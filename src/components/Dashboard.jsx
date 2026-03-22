@@ -142,36 +142,76 @@ export default function Dashboard({ user, onPunch, onViewHistory }) {
             </div>
           </div>
 
-          {!todayRecord?.approved && !isDone && (
-            <div style={{ position: 'relative' }}>
-              <button 
-                className="btn btn-primary" 
-                onClick={onPunch}
-                style={{ 
-                  padding: '1.75rem', 
-                  fontSize: '1.4rem', 
-                  gap: '0.75rem',
-                  background: getPunchTheme(displayPunch).bgColor,
-                  border: `1px solid ${getPunchTheme(displayPunch).borderColor}`,
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                  transition: 'transform 0.2s'
-                }}
-                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
-                onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <Clock size={28} />
-                {getPunchLabel(displayPunch)}を打刻
-              </button>
-              {displayPunch.includes('Out') && (
-                <div style={{ 
-                  textAlign: 'center', 
-                  marginTop: '0.75rem', 
-                  fontSize: '0.8rem', 
-                  color: 'var(--text-muted)',
-                  animation: 'pulse 2s infinite'
-                }}>
-                  休憩や退勤の時はこちらを押してください
-                </div>
+          {!todayRecord?.approved && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              {/* 出勤ボタン */}
+              {!todayRecord?.morningIn ? (
+                <button 
+                  className="btn" 
+                  onClick={() => onPunch('morningIn')}
+                  style={{ 
+                    gridColumn: 'span 2',
+                    padding: '1.5rem', 
+                    fontSize: '1.25rem', 
+                    background: getPunchTheme('morningIn').bgColor,
+                    color: 'white',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <Clock size={24} /> 出勤を打刻
+                </button>
+              ) : (
+                <>
+                  {/* 休憩ボタン（ピンク） */}
+                  <button 
+                    className="btn" 
+                    onClick={() => onPunch('morningOut')}
+                    disabled={!!todayRecord?.morningOut}
+                    style={{ 
+                      padding: '1rem', 
+                      fontSize: '1rem', 
+                      background: todayRecord?.morningOut ? '#f1f5f9' : getPunchTheme('morningOut').bgColor,
+                      color: todayRecord?.morningOut ? '#94a3b8' : 'white',
+                      opacity: todayRecord?.morningOut ? 0.6 : 1,
+                      border: todayRecord?.morningOut ? '1px solid #e2e8f0' : 'none'
+                    }}
+                  >
+                    休憩入り
+                  </button>
+                  <button 
+                    className="btn" 
+                    onClick={() => onPunch('afternoonIn')}
+                    disabled={!todayRecord?.morningOut || !!todayRecord?.afternoonIn}
+                    style={{ 
+                      padding: '1rem', 
+                      fontSize: '1rem', 
+                      background: (!todayRecord?.morningOut || todayRecord?.afternoonIn) ? '#f1f5f9' : getPunchTheme('afternoonIn').bgColor,
+                      color: (!todayRecord?.morningOut || todayRecord?.afternoonIn) ? '#94a3b8' : 'white',
+                      opacity: (!todayRecord?.morningOut || todayRecord?.afternoonIn) ? 0.6 : 1,
+                      border: (!todayRecord?.morningOut || todayRecord?.afternoonIn) ? '1px solid #e2e8f0' : 'none'
+                    }}
+                  >
+                    休憩戻り
+                  </button>
+
+                  {/* 退勤ボタン */}
+                  <button 
+                    className="btn" 
+                    onClick={() => onPunch('afternoonOut')}
+                    disabled={!!todayRecord?.afternoonOut}
+                    style={{ 
+                      gridColumn: 'span 2',
+                      marginTop: '0.5rem',
+                      padding: '1.25rem', 
+                      fontSize: '1.2rem', 
+                      background: todayRecord?.afternoonOut ? '#f1f5f9' : getPunchTheme('afternoonOut').bgColor,
+                      color: todayRecord?.afternoonOut ? '#94a3b8' : 'white',
+                      border: todayRecord?.afternoonOut ? '1px solid #e2e8f0' : 'none'
+                    }}
+                  >
+                    <LogOut size={22} /> 退勤を打刻
+                  </button>
+                </>
               )}
             </div>
           )}
@@ -186,14 +226,6 @@ export default function Dashboard({ user, onPunch, onViewHistory }) {
             }}>
               <ShieldCheck size={40} color="#059669" style={{ marginBottom: '0.5rem' }} />
               <p style={{ fontWeight: 800, fontSize: '1.1rem', color: '#065f46' }}>勤怠確定済み</p>
-            </div>
-          )}
-
-          {isDone && !todayRecord?.approved && (
-            <div style={{ textAlign: 'center', padding: '1rem' }}>
-              <CheckCircle2 size={36} color="var(--secondary)" style={{ marginBottom: '0.5rem' }} />
-              <p style={{ color: 'var(--secondary)', fontWeight: 700 }}>打刻完了</p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>お疲れ様でした！</p>
             </div>
           )}
         </div>
