@@ -149,8 +149,6 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
           </button>
         </div>
 
-        </h3>
-
         {/* 登録従業員の管理（追加分） */}
         <div className="card" style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>

@@ -68,6 +68,20 @@ export async function findEmployeeById(id) {
   return null;
 }
 
+export async function deleteEmployee(id) {
+  // Delete associated records first
+  const records = await getRecordsByEmployee(id);
+  const deletePromises = records.map(record => {
+    const docId = `${id}_${record.date}`;
+    return deleteDoc(doc(db, COLLECTIONS.RECORDS, docId));
+  });
+  await Promise.all(deletePromises);
+
+  // Delete employee doc
+  await deleteDoc(doc(db, COLLECTIONS.EMPLOYEES, id));
+  return true;
+}
+
 // --- Records ---
 export async function getRecords() {
   const querySnapshot = await getDocs(collection(db, COLLECTIONS.RECORDS));
