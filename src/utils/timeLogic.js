@@ -50,6 +50,17 @@ export function getDisplayPunchType(record) {
   return next;
 }
 
+// 打刻後のメッセージ
+export function getPunchMessage(type) {
+  const messages = {
+    morningIn: 'よろしくお願いします！今日もしっかり頑張りましょう。',
+    morningOut: '休憩ですね。ゆっくり休んでリフレッシュしてください！',
+    afternoonIn: 'お帰りなさい！午後の仕事も頑張りましょう。',
+    afternoonOut: 'お疲れ様でした！気をつけてお帰りください。',
+  };
+  return messages[type] || '打刻が完了しました。';
+}
+
 // 打刻タイプの日本語ラベル
 export function getPunchLabel(type) {
   const labels = {

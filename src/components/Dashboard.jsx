@@ -142,38 +142,75 @@ export default function Dashboard({ user, onPunch, onViewHistory }) {
             </div>
           </div>
 
-          {!todayRecord?.approved && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              {/* 出勤ボタン */}
-              {!todayRecord?.morningIn ? (
-                <button 
-                  className="btn" 
-                  onClick={() => onPunch('morningIn')}
-                  style={{ 
-                    gridColumn: 'span 2',
-                    padding: '1.5rem', 
-                    fontSize: '1.25rem', 
-                    background: getPunchTheme('morningIn').bgColor,
-                    color: 'white',
-                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  <Clock size={24} /> 出勤を打刻
-                </button>
-              ) : (
-                <>
-                  {/* 休憩ボタン（ピンク） */}
+          {!todayRecord?.approved ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* 出勤・退勤セクション */}
+              <div style={{ 
+                padding: '1.25rem', 
+                background: '#f8fafc', 
+                borderRadius: '1rem', 
+                border: '1px solid #e2e8f0' 
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>
+                  <Clock size={16} /> 勤務の記録
+                </div>
+                {!todayRecord?.morningIn ? (
+                  <button 
+                    className="btn" 
+                    onClick={() => onPunch('morningIn')}
+                    style={{ 
+                      width: '100%',
+                      padding: '1.25rem', 
+                      fontSize: '1.2rem', 
+                      background: getPunchTheme('morningIn').bgColor,
+                      color: 'white',
+                      boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)'
+                    }}
+                  >
+                    出勤を打刻する
+                  </button>
+                ) : (
+                  <button 
+                    className="btn" 
+                    onClick={() => onPunch('afternoonOut')}
+                    disabled={!!todayRecord?.afternoonOut}
+                    style={{ 
+                      width: '100%',
+                      padding: '1.25rem', 
+                      fontSize: '1.2rem', 
+                      background: todayRecord?.afternoonOut ? '#f1f5f9' : getPunchTheme('afternoonOut').bgColor,
+                      color: todayRecord?.afternoonOut ? '#94a3b8' : 'white',
+                      border: todayRecord?.afternoonOut ? '1px solid #e2e8f0' : 'none',
+                      opacity: todayRecord?.afternoonOut ? 0.6 : 1
+                    }}
+                  >
+                    <LogOut size={20} /> 退勤を打刻する
+                  </button>
+                )}
+              </div>
+
+              {/* 休憩バナーセクション */}
+              <div style={{ 
+                padding: '1.25rem', 
+                background: '#fff1f2', 
+                borderRadius: '1rem', 
+                border: '1px solid #fecdd3' 
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#be185d', fontWeight: 700, fontSize: '0.9rem' }}>
+                  <span style={{ fontSize: '1.2rem' }}>☕</span> 休憩の記録
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <button 
                     className="btn" 
                     onClick={() => onPunch('morningOut')}
-                    disabled={!!todayRecord?.morningOut}
+                    disabled={!todayRecord?.morningIn || !!todayRecord?.morningOut || !!todayRecord?.afternoonOut}
                     style={{ 
                       padding: '1rem', 
                       fontSize: '1rem', 
-                      background: todayRecord?.morningOut ? '#f1f5f9' : getPunchTheme('morningOut').bgColor,
-                      color: todayRecord?.morningOut ? '#94a3b8' : 'white',
-                      opacity: todayRecord?.morningOut ? 0.6 : 1,
-                      border: todayRecord?.morningOut ? '1px solid #e2e8f0' : 'none'
+                      background: (!todayRecord?.morningIn || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '#f8fafc' : getPunchTheme('morningOut').bgColor,
+                      color: (!todayRecord?.morningIn || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '#cbd5e1' : 'white',
+                      border: (!todayRecord?.morningIn || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '1px solid #e2e8f0' : 'none',
+                      opacity: (!todayRecord?.morningIn || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? 0.5 : 1
                     }}
                   >
                     休憩入り
@@ -181,42 +218,27 @@ export default function Dashboard({ user, onPunch, onViewHistory }) {
                   <button 
                     className="btn" 
                     onClick={() => onPunch('afternoonIn')}
-                    disabled={!todayRecord?.morningOut || !!todayRecord?.afternoonIn}
+                    disabled={!todayRecord?.morningOut || !!todayRecord?.afternoonIn || !!todayRecord?.afternoonOut}
                     style={{ 
                       padding: '1rem', 
                       fontSize: '1rem', 
-                      background: (!todayRecord?.morningOut || todayRecord?.afternoonIn) ? '#f1f5f9' : getPunchTheme('afternoonIn').bgColor,
-                      color: (!todayRecord?.morningOut || todayRecord?.afternoonIn) ? '#94a3b8' : 'white',
-                      opacity: (!todayRecord?.morningOut || todayRecord?.afternoonIn) ? 0.6 : 1,
-                      border: (!todayRecord?.morningOut || todayRecord?.afternoonIn) ? '1px solid #e2e8f0' : 'none'
+                      background: (!todayRecord?.morningOut || todayRecord?.afternoonIn || !!todayRecord?.afternoonOut) ? '#f8fafc' : getPunchTheme('afternoonIn').bgColor,
+                      color: (!todayRecord?.morningOut || todayRecord?.afternoonIn || !!todayRecord?.afternoonOut) ? '#cbd5e1' : 'white',
+                      border: (!todayRecord?.morningOut || todayRecord?.afternoonIn || !!todayRecord?.afternoonOut) ? '1px solid #e2e8f0' : 'none',
+                      opacity: (!todayRecord?.morningOut || todayRecord?.afternoonIn || !!todayRecord?.afternoonOut) ? 0.5 : 1
                     }}
                   >
                     休憩戻り
                   </button>
-
-                  {/* 退勤ボタン */}
-                  <button 
-                    className="btn" 
-                    onClick={() => onPunch('afternoonOut')}
-                    disabled={!!todayRecord?.afternoonOut}
-                    style={{ 
-                      gridColumn: 'span 2',
-                      marginTop: '0.5rem',
-                      padding: '1.25rem', 
-                      fontSize: '1.2rem', 
-                      background: todayRecord?.afternoonOut ? '#f1f5f9' : getPunchTheme('afternoonOut').bgColor,
-                      color: todayRecord?.afternoonOut ? '#94a3b8' : 'white',
-                      border: todayRecord?.afternoonOut ? '1px solid #e2e8f0' : 'none'
-                    }}
-                  >
-                    <LogOut size={22} /> 退勤を打刻
-                  </button>
-                </>
-              )}
+                </div>
+                {!todayRecord?.morningIn && (
+                  <p style={{ fontSize: '0.7rem', color: '#fb7185', marginTop: '0.75rem', textAlign: 'center' }}>
+                    ※出勤打刻をすると休憩ボタンが有効になります
+                  </p>
+                )}
+              </div>
             </div>
-          )}
-
-          {todayRecord?.approved && (
+          ) : (
             <div style={{
               background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
               border: '2px solid #10b981',

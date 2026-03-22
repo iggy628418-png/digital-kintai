@@ -9,7 +9,8 @@ import {
   nowTimeString, 
   getNextPunchType,
   getDisplayPunchType,
-  getPunchLabel
+  getPunchLabel,
+  getPunchMessage
 } from './utils/timeLogic';
 
 import NameRegistration from './components/NameRegistration';
@@ -46,6 +47,7 @@ function EmployeeApp() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('dashboard');
   const [loading, setLoading] = useState(true);
+  const [punchResult, setPunchResult] = useState(null);
   const [pendingPunchType, setPendingPunchType] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
 
@@ -93,10 +95,12 @@ function EmployeeApp() {
 
     const type = pendingPunchType;
     const label = getPunchLabel(type);
+    const message = getPunchMessage(type);
 
     const newRecord = { ...record, [type]: nowTimeString() };
     await upsertRecord(newRecord);
-    alert(`【${label}】\n${nowTimeString()} に打刻しました！`);
+
+    setPunchResult({ type, label, message, time: nowTimeString() });
     
     setPendingPunchType(null);
     // ダッシュボードを再読み込み
@@ -120,7 +124,47 @@ function EmployeeApp() {
       {showScanner && (
         <Scanner onScan={handleScan} onClose={() => setShowScanner(false)} />
       )}
+      {punchResult && (
+        <PunchModal result={punchResult} onClose={() => setPunchResult(null)} />
+      )}
     </>
+  );
+}
+
+// ===== 打刻完了モーダル =====
+function PunchModal({ result, onClose }) {
+  const { label, message, time } = result;
+  
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000, 
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '1.5rem', background: 'rgba(0,0,0,0.6)'
+    }}>
+      <div className="card" style={{ 
+        maxWidth: '400px', width: '100%', textAlign: 'center', padding: '2rem',
+        animation: 'fadeIn 0.3s ease-out' 
+      }}>
+        <div style={{ 
+          fontSize: '3rem', marginBottom: '1rem', 
+          animation: 'pulse 1s infinite alternate' 
+        }}>🎉</div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '0.5rem' }}>
+          {label}完了
+        </h2>
+        <div style={{ 
+          fontSize: '2rem', fontWeight: 900, marginBottom: '1rem', letterSpacing: '0.1em' 
+        }}>
+          {time}
+        </div>
+        <p style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: 1.6 }}>
+          {message}
+        </p>
+        <button className="btn btn-primary" onClick={onClose} style={{ padding: '1rem' }}>
+          閉じる
+        </button>
+      </div>
+    </div>
   );
 }
 
