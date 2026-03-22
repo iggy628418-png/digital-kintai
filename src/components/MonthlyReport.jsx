@@ -100,14 +100,14 @@ export default function MonthlyReport({ onBack, initialMonth }) {
   const monthLabel = `${y}年${Number(m)}月`;
 
   return (
-    <div className="app-container page-transition">
+    <div className="report-container">
       {/* ヘッダー（印刷時非表示） */}
       <header className="header no-print" style={{ background: '#1e293b', color: 'white', border: 'none' }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
           <ArrowLeft size={24} color="white" />
         </button>
         <span className="header-title" style={{ background: 'white', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          月次集計レポート
+          勤務集計レポート
         </span>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button onClick={downloadCSV} title="CSVダウンロード" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -119,9 +119,9 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         </div>
       </header>
 
-      <main style={{ padding: '1rem' }}>
+      <main className="no-print" style={{ padding: '1rem' }}>
         {/* 月選択（印刷時非表示） */}
-        <div className="card no-print" style={{ marginBottom: '1.5rem' }}>
+        <div className="card" style={{ marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
             <BarChart2 size={18} color="var(--primary)" />
             <span style={{ fontWeight: 700 }}>対象月を選択</span>
@@ -134,110 +134,188 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           />
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
             <button onClick={downloadCSV} className="btn btn-outline" style={{ flex: 1, fontSize: '0.875rem' }}>
-              <Download size={16} />CSVダウンロード
+              <Download size={16} />CSV保存
             </button>
             <button onClick={handlePrint} className="btn btn-primary" style={{ flex: 1, fontSize: '0.875rem', background: '#334155' }}>
-              <Printer size={16} />印刷
+              <Printer size={16} />印刷用表示
             </button>
           </div>
         </div>
 
-        {/* 印刷タイトル（印刷時のみ表示） */}
-        <div className="print-only" style={{ display: 'none', textAlign: 'center', marginBottom: '1rem' }}>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{monthLabel} 勤務集計表</h1>
+        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
+          ※「印刷用表示」ボタンを押すと、写真のようなフォーマットで1人1ページずつ出力されます。
         </div>
-
-        {summaries.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            <p>従業員が登録されていません</p>
-          </div>
-        ) : (
-          summaries.map(({ emp, dailyData, totalMinutes, totalBreakMinutes, workDays }) => (
-            <div key={emp.id} className="card report-card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
-              {/* 従業員名 + 月合計 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div>
-                  <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{emp.name}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>{monthLabel}</span>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem' }}>
-                  <span>出勤日数: <strong>{workDays}日</strong></span>
-                  <span>合計: <strong style={{ color: 'var(--primary)' }}>{minutesToDisplay(totalMinutes)}</strong></span>
-                </div>
-              </div>
-
-              {/* 日別テーブル */}
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9' }}>
-                      <th style={th}>日付</th>
-                      <th style={th}>出勤</th>
-                      <th style={th}>休憩入り</th>
-                      <th style={th}>休憩戻り</th>
-                      <th style={th}>退勤</th>
-                      <th style={th}>休憩</th>
-                      <th style={th}>実働</th>
-                      <th style={th}>状態</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dailyData.filter(d => d.hasData).map((d, index) => (
-                      <tr key={d.date} style={{ borderBottom: '1px solid #e2e8f0', background: index % 2 === 0 ? 'white' : '#f8fafc' }}>
-                        <td style={td}>{formatDateJP(d.date)}</td>
-                        <td style={{ ...td, textAlign: 'center' }}>{d.morningIn    || '—'}</td>
-                        <td style={{ ...td, textAlign: 'center' }}>{d.morningOut   || '—'}</td>
-                        <td style={{ ...td, textAlign: 'center' }}>{d.afternoonIn  || '—'}</td>
-                        <td style={{ ...td, textAlign: 'center' }}>{d.afternoonOut || '—'}</td>
-                        <td style={{ ...td, textAlign: 'center', color: '#db2777' }}>{d.breakMinutes > 0 ? minutesToDisplay(d.breakMinutes) : '—'}</td>
-                        <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: 'var(--primary)' }}>{minutesToDisplay(d.minutes)}</td>
-                        <td style={{ ...td, textAlign: 'center' }}>
-                          <span style={{
-                            fontSize: '0.65rem',
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '0.4rem',
-                            background: d.approved ? '#d1fae5' : '#fef3c7',
-                            color: d.approved ? '#065f46' : '#92400e',
-                            fontWeight: 700,
-                            border: `1px solid ${d.approved ? '#a7f3d0' : '#fde68a'}`,
-                          }}>
-                            {d.approved ? '確定' : '未承認'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    {dailyData.filter(d => d.hasData).length === 0 && (
-                      <tr>
-                        <td colSpan={8} style={{ ...td, textAlign: 'center', color: 'var(--text-muted)', padding: '1rem' }}>
-                          この月の記録はありません
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                  <tfoot>
-                    <tr style={{ background: '#eff6ff', fontWeight: 700 }}>
-                      <td style={td}>合計</td>
-                      <td colSpan={4} style={{ ...td, textAlign: 'center', color: 'var(--text-muted)' }}>{workDays}日</td>
-                      <td style={{ ...td, textAlign: 'center', color: '#db2777' }}>{minutesToDisplay(totalBreakMinutes)}</td>
-                      <td style={{ ...td, textAlign: 'center', color: 'var(--primary)' }}>{minutesToDisplay(totalMinutes)}</td>
-                      <td style={td}></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          ))
-        )}
       </main>
 
-      {/* 印刷用スタイル */}
+      {/* 印刷用プレビュー / 実際の印刷内容 */}
+      <div className="print-content">
+        {summaries.map(({ emp, dailyData }) => (
+          <div key={emp.id} className="print-page">
+            <div className="print-header">
+              <div className="print-ym">
+                <span className="ym-year">{y}</span>年
+                <span className="ym-month">{Number(m)}</span>月
+              </div>
+              <h1 className="print-title">勤務表</h1>
+              <div className="print-name-box">
+                氏名 <span className="print-name">{emp.name}</span>
+              </div>
+            </div>
+
+            <table className="print-table">
+              <thead>
+                <tr>
+                  <th rowSpan={2} style={{ width: '15%' }}>月/日 (曜日)</th>
+                  <th colSpan={3}>午前</th>
+                  <th colSpan={3}>午後</th>
+                  <th rowSpan={2} style={{ width: '10%' }}>確認印</th>
+                </tr>
+                <tr>
+                  <th>開始</th>
+                  <th>休憩</th>
+                  <th>終了</th>
+                  <th>開始</th>
+                  <th>休憩</th>
+                  <th>終了</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyData.map(d => {
+                  const dateObj = new Date(d.date);
+                  const days = ['日', '月', '火', '水', '木', '金', '土'];
+                  const dow = days[dateObj.getDay()];
+                  const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+
+                  return (
+                    <tr key={d.date} className={isWeekend ? 'weekend-row' : ''}>
+                      <td className="center">
+                        {dateObj.getDate()}日 ({dow})
+                      </td>
+                      <td className="center">{d.morningIn || ''}</td>
+                      <td className="center"></td>
+                      <td className="center">{d.morningOut || ''}</td>
+                      <td className="center">{d.afternoonIn || ''}</td>
+                      <td className="center"></td>
+                      <td className="center">{d.afternoonOut || ''}</td>
+                      <td className="center">
+                        {d.approved && <div className="stamp-placeholder">印</div>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div className="print-footer">
+              <div className="footer-item">勤務</div>
+              <div className="footer-item">公休</div>
+              <div className="footer-item">休業</div>
+              <div className="footer-item">有給</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <style>{`
+        .print-content {
+          padding: 2rem;
+          background: #f1f5f9;
+        }
+        .print-page {
+          background: white;
+          width: 210mm;
+          min-height: 297mm;
+          padding: 20mm 15mm;
+          margin: 0 auto 2rem auto;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+          color: black;
+          font-family: "Sawarabi Mincho", "Hiragino Mincho ProN", serif;
+        }
+        .print-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 2rem;
+        }
+        .print-ym {
+          font-size: 1.2rem;
+          border-bottom: 1px solid black;
+          padding-bottom: 4px;
+        }
+        .ym-year, .ym-month {
+          font-size: 1.5rem;
+          margin-right: 4px;
+        }
+        .print-title {
+          font-size: 2rem;
+          font-weight: normal;
+          letter-spacing: 0.5em;
+          margin: 0;
+        }
+        .print-name-box {
+          font-size: 1.2rem;
+          border-bottom: 1px solid black;
+          min-width: 200px;
+          text-align: left;
+        }
+        .print-name {
+          font-size: 1.4rem;
+          margin-left: 1rem;
+        }
+        .print-table {
+          width: 100%;
+          border-collapse: collapse;
+          border: 2px solid black;
+        }
+        .print-table th, .print-table td {
+          border: 1px solid black;
+          height: 2rem;
+          padding: 4px;
+        }
+        .print-table th {
+          background: #f8f8f8;
+          font-weight: normal;
+          font-size: 0.9rem;
+        }
+        .center { text-align: center; }
+        .weekend-row { background: #fcfcfc; }
+        
+        .stamp-placeholder {
+          width: 24px;
+          height: 24px;
+          border: 1px solid #ef4444;
+          border-radius: 50%;
+          color: #ef4444;
+          font-size: 0.6rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto;
+        }
+
+        .print-footer {
+          margin-top: 2rem;
+          display: flex;
+          gap: 2rem;
+          font-size: 0.9rem;
+        }
+
         @media print {
+          title { display: none; }
           .no-print { display: none !important; }
-          .print-only { display: block !important; }
-          .app-container { max-width: 100% !important; box-shadow: none !important; }
-          .report-card { break-inside: avoid; box-shadow: none !important; border: 1px solid #ccc !important; }
-          body { font-size: 11px; }
+          .print-content { padding: 0; background: none; }
+          .print-page {
+            box-shadow: none;
+            margin: 0;
+            width: 100%;
+            height: auto;
+            break-after: page;
+          }
+          body { background: white; }
+          @page {
+            size: A4;
+            margin: 0;
+          }
         }
       `}</style>
     </div>
