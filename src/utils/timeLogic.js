@@ -12,15 +12,29 @@ export function currentHour() {
 
 // 現在の打刻状態を判定（午後のみ打刻にも対応）
 export function getNextPunchType(record) {
-  if (!record) return 'morningIn';
-  // afternoonIn 済みなら次は afternoonOut（morningIn の有無を問わない）
+  const hour = currentHour();
+  
+  if (!record) {
+    return hour < 12 ? 'morningIn' : 'afternoonIn';
+  }
+
+  // 1. 午前出勤中なら、次は必ず午前退勤
+  if (record.morningIn && !record.morningOut) return 'morningOut';
+
+  // 2. 午後出勤中なら、次は必ず午後退勤
   if (record.afternoonIn && !record.afternoonOut) return 'afternoonOut';
-  // afternoonOut まで全部揃っていれば完了
+
+  // 3. 全て完了
   if (record.afternoonOut) return 'done';
-  // 通常の午前フロー
-  if (!record.morningIn) return 'morningIn';
-  if (!record.morningOut) return 'morningOut';
+
+  // 4. まだ何もしていない場合（recordはあるが時間は空）
+  if (!record.morningIn && !record.morningOut && !record.afternoonIn) {
+    return hour < 12 ? 'morningIn' : 'afternoonIn';
+  }
+
+  // 5. 午前が終わっている or スキップされている場合
   if (!record.afternoonIn) return 'afternoonIn';
+
   return 'done';
 }
 

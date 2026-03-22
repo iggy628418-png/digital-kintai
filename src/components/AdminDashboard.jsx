@@ -120,7 +120,7 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
             <span style={{ fontWeight: 700 }}>打刻用QRコード</span>
           </div>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-            「午前」と「午後」の2つのQRコードだけで運用できます。1回目のスキャンで出勤、2回目で退勤が自動で切り替わります。
+            <strong>QRコードはこれ1枚だけでOK！</strong> スキャンのたびに、出勤・退勤が自動で切り替わります（朝なら出勤、昼なら退勤…と自動で進みます）。
           </p>
           <button
             onClick={onViewQRCode}

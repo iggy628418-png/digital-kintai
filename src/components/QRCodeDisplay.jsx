@@ -33,40 +33,33 @@ export default function QRCodeDisplay({ onBack }) {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-          {/* 午前用 */}
-          <div className="card" style={{ textAlign: 'center', padding: '1.5rem', border: '2px solid var(--primary)' }}>
-            <div style={{ background: '#eff6ff', color: 'var(--primary)', display: 'inline-block', padding: '0.25rem 1rem', borderRadius: '1rem', fontWeight: 800, fontSize: '1rem', marginBottom: '1rem' }}>
-              午前用 (出勤・退勤 共通)
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+          {/* ユニバーサルQR */}
+          <div className="card" style={{ textAlign: 'center', padding: '2rem', border: '3px solid var(--secondary)', maxWidth: '500px', width: '100%' }}>
+            <div style={{ background: '#f5f3ff', color: 'var(--secondary)', display: 'inline-block', padding: '0.4rem 1.5rem', borderRadius: '1.5rem', fontWeight: 800, fontSize: '1.2rem', marginBottom: '1.5rem' }}>
+              打刻用 共通QRコード
             </div>
-            <div style={{ background: 'white', padding: '1rem', borderRadius: '0.5rem', display: 'inline-block', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-              <QRCodeSVG value={QR_IN} size={240} level="H" includeMargin={true} />
+            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', display: 'inline-block', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
+              <QRCodeSVG value={QR_IN} size={320} level="H" includeMargin={true} />
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 700 }}>1回目で出勤、2回目で退勤になります</p>
-          </div>
-
-          {/* 午後用 */}
-          <div className="card" style={{ textAlign: 'center', padding: '1.5rem', border: '2px solid var(--secondary)' }}>
-            <div style={{ background: '#f5f3ff', color: 'var(--secondary)', display: 'inline-block', padding: '0.25rem 1rem', borderRadius: '1rem', fontWeight: 800, fontSize: '1rem', marginBottom: '1rem' }}>
-              午後用 (出勤・退勤 共通)
-            </div>
-            <div style={{ background: 'white', padding: '1rem', borderRadius: '0.5rem', display: 'inline-block', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-              <QRCodeSVG value={QR_OUT} size={240} level="H" includeMargin={true} />
-            </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 700 }}>1回目で出勤、2回目で退勤になります</p>
+            <p style={{ fontSize: '1rem', color: 'var(--text-main)', fontWeight: 700, lineHeight: 1.6 }}>
+              これ1つで「出勤」も「退勤」も完結します。<br/>
+              スキャンのたびに、自動で次の状態へ進みます。
+            </p>
           </div>
         </div>
 
         <div className="card no-print" style={{ marginTop: '2rem', background: '#f8fafc' }}>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.75rem', fontWeight: 700 }}>【新しい使いかた】</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.75rem', fontWeight: 700 }}>【究極にシンプルな使いかた】</p>
           <ul style={{ fontSize: '0.875rem', color: 'var(--text-main)', paddingLeft: '1.2rem', lineHeight: 2 }}>
-            <li>午前と午後の2つのQRコードだけで運用できます。</li>
-            <li><strong>1回目のスキャンで「出勤」</strong>、<strong>2回目のスキャンで「退勤」</strong>が自動的に記録されます。</li>
-            <li>QRコードを印刷して、スタッフが読み取りやすい場所に掲示してください。</li>
+            <li><strong>QRコードはこれ1枚だけ</strong>でOKです。</li>
+            <li>スタッフは何も考えず、このQRコードをスキャンするだけ。</li>
+            <li>「今、出勤なのか退勤なのか」はシステムが自動で判別します。</li>
+            <li>（例：朝スキャンすれば出勤、昼前にスキャンすれば退勤…と自動で進みます）</li>
           </ul>
           <button className="btn btn-primary" onClick={handlePrint} style={{ marginTop: '1rem', width: '100%' }}>
             <Printer size={18} />
-            このページを印刷する
+            このQRコードを印刷する
           </button>
         </div>
       </main>
