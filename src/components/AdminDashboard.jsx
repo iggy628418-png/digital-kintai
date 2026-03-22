@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode, Trash2 } from 'lucide-react';
-import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord, deleteRecord } from '../utils/storage';
+import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord, deleteRecord, deleteEmployee } from '../utils/storage';
 import { formatDateJP, calcDailyMinutes, calcBreakMinutes, minutesToDisplay } from '../utils/timeLogic';
 
 const TIME_FIELDS = [
@@ -41,6 +41,17 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
   const handleReset = async (employeeId, date) => {
     if (window.confirm('この日の記録を完全にリセット（削除）しますか？')) {
       if (await deleteRecord(employeeId, date)) reload();
+    }
+  };
+
+  const handleDeleteEmployee = async (employee) => {
+    if (window.confirm(`従業員「${employee.name}」を完全に削除しますか？`)) {
+      if (window.confirm('従業員を削除すると、その方に関連する全ての勤務記録も同時に消去されます。本当によろしいですか？')) {
+        if (await deleteEmployee(employee.id)) {
+          alert(`「${employee.name}」を削除しました。`);
+          reload();
+        }
+      }
     }
   };
 
@@ -136,6 +147,41 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
             <QrCode size={18} />
             QRコードを表示・印刷する
           </button>
+        </div>
+
+        </h3>
+
+        {/* 登録従業員の管理（追加分） */}
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <Users size={18} color="var(--primary)" />
+            <span style={{ fontWeight: 700 }}>登録従業員の管理</span>
+          </div>
+          <div style={{ display: 'grid', gap: '0.5rem' }}>
+            {employees.length === 0 ? (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>登録されている従業員はいません</p>
+            ) : (
+              employees.map(emp => (
+                <div key={emp.id} style={{ 
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                  padding: '0.75rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' 
+                }}>
+                  <span style={{ fontWeight: 700 }}>{emp.name}</span>
+                  <button 
+                    onClick={() => handleDeleteEmployee(emp)}
+                    title="この人を削除"
+                    style={{ 
+                      background: 'none', border: 'none', cursor: 'pointer', 
+                      display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#ef4444' 
+                    }}
+                  >
+                    <Trash2 size={16} />
+                    解除
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
