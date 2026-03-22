@@ -79,28 +79,27 @@ function EmployeeApp() {
       return;
     }
 
-    const nextPunch = getNextPunchType(record);
-    const isScanIn = decodedText === QR_IN;
-    const isScanOut = decodedText === QR_OUT;
+    const isMorningQR = decodedText === QR_IN;
+    const isAfternoonQR = decodedText === QR_OUT;
 
-    if (!isScanIn && !isScanOut) {
+    if (!isMorningQR && !isAfternoonQR) {
       alert('無効なQRコードです。');
       return;
     }
 
     let punchType;
-    if (isScanIn) {
-      if (nextPunch === 'morningIn') punchType = 'morningIn';
-      else if (nextPunch === 'afternoonIn') punchType = 'afternoonIn';
+    if (isMorningQR) {
+      if (!record.morningIn) punchType = 'morningIn';
+      else if (!record.morningOut) punchType = 'morningOut';
       else {
-        alert('既に出勤打刻済みです。退勤用QRをスキャンしてください。');
+        alert('午前中の打刻（出勤・退勤）は既に完了しています。');
         return;
       }
     } else {
-      if (nextPunch === 'morningOut') punchType = 'morningOut';
-      else if (nextPunch === 'afternoonOut') punchType = 'afternoonOut';
+      if (!record.afternoonIn) punchType = 'afternoonIn';
+      else if (!record.afternoonOut) punchType = 'afternoonOut';
       else {
-        alert('出勤打刻がされていません。出勤用QRをスキャンしてください。');
+        alert('午後の打刻（出勤・退勤）は既に完了しています。');
         return;
       }
     }
