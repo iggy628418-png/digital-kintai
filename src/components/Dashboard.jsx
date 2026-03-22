@@ -18,10 +18,6 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
     return () => clearInterval(timer);
   }, []);
 
-  const nextPunch = getNextPunchType(todayRecord);
-  const displayPunch = getDisplayPunchType(todayRecord);
-  const isDone = nextPunch === 'done';
-
   return (
     <div className="app-container page-transition">
       <header className="header">
