@@ -14,7 +14,8 @@ import {
   getCurrentStatusLabel,
   getNextPunchType,
   getDisplayPunchType,
-  getPunchLabel
+  getPunchLabel,
+  getPunchTheme
 } from '../utils/timeLogic';
 
 export default function Dashboard({ user, onPunch, onViewHistory }) {
