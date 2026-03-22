@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode } from 'lucide-react';
-import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord } from '../utils/storage';
+import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode, Trash2 } from 'lucide-react';
+import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord, deleteRecord } from '../utils/storage';
 import { formatDateJP, calcDailyMinutes, minutesToDisplay } from '../utils/timeLogic';
 
 const TIME_FIELDS = [
@@ -36,6 +36,12 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
   
   const handleUnapprove = async (employeeId, date) => {
     if (await unapproveRecord(employeeId, date)) reload();
+  };
+
+  const handleReset = async (employeeId, date) => {
+    if (window.confirm('この日の記録を完全にリセット（削除）しますか？')) {
+      if (await deleteRecord(employeeId, date)) reload();
+    }
   };
 
   const startEdit = (record) => {
@@ -167,6 +173,16 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
                       >
                         <Edit2 size={13} />
                         修正
+                      </button>
+                    )}
+                    {!isEditing && (
+                      <button
+                        onClick={() => handleReset(record.employeeId, record.date)}
+                        title="記録をリセット"
+                        style={{ background: 'none', border: '1px solid #fee2e2', borderRadius: '0.5rem', padding: '0.3rem 0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: '#ef4444' }}
+                      >
+                        <Trash2 size={13} />
+                        リセット
                       </button>
                     )}
                   </div>

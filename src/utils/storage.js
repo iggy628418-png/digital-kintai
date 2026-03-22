@@ -8,7 +8,8 @@ import {
   updateDoc, 
   query, 
   where,
-  addDoc
+  addDoc,
+  deleteDoc
 } from "firebase/firestore";
 
 // LocalStorage keys for current user session purely
@@ -113,6 +114,13 @@ export async function unapproveRecord(employeeId, date) {
     approved: false,
     approvedAt: null,
   });
+  return true;
+}
+
+export async function deleteRecord(employeeId, date) {
+  const docId = `${employeeId}_${date}`;
+  const docRef = doc(db, COLLECTIONS.RECORDS, docId);
+  await deleteDoc(docRef);
   return true;
 }
 
