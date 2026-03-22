@@ -54,6 +54,7 @@ export default function Dashboard({ user, onPunch, onViewHistory }) {
       </header>
 
       <main style={{ padding: '1rem' }}>
+        {/* ステータスカード */}
         <div className="card" style={{ background: 'linear-gradient(135deg, #1e293b, #334155)', color: 'white' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
             <div>
@@ -109,6 +110,8 @@ export default function Dashboard({ user, onPunch, onViewHistory }) {
           </div>
         </div>
 
+        {/* 打刻カード */}
+        <div className="card">
           <div style={{ marginBottom: '1.5rem' }}>
             <h3 style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <Clock size={18} color="var(--primary)" />
@@ -189,10 +192,11 @@ export default function Dashboard({ user, onPunch, onViewHistory }) {
           {isDone && !todayRecord?.approved && (
             <div style={{ textAlign: 'center', padding: '1rem' }}>
               <CheckCircle2 size={36} color="var(--secondary)" style={{ marginBottom: '0.5rem' }} />
-              <p style={{ color: 'var(--secondary)', fontWeight: 700 }}>本日の全ての打刻が完了しました</p>
+              <p style={{ color: 'var(--secondary)', fontWeight: 700 }}>打刻完了</p>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>お疲れ様でした！</p>
             </div>
           )}
+        </div>
 
         <button className="btn btn-outline" onClick={onViewHistory}>
           <Calendar size={18} />
