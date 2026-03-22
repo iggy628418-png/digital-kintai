@@ -35,6 +35,7 @@ export function clearCurrentUser() {
 const COLLECTIONS = {
   EMPLOYEES: 'employees',
   RECORDS: 'records',
+  APPROVED_RECORDS: 'approved_records',
   SETTINGS: 'settings',
 };
 
@@ -69,11 +70,13 @@ export async function findEmployeeById(id) {
 }
 
 export async function deleteEmployee(id) {
-  // Delete associated records first
   const records = await getRecordsByEmployee(id);
   const deletePromises = records.map(record => {
     const docId = `${id}_${record.date}`;
-    return deleteDoc(doc(db, COLLECTIONS.RECORDS, docId));
+    // Try deleting from both potential locations
+    const p1 = deleteDoc(doc(db, COLLECTIONS.RECORDS, docId));
+    const p2 = deleteDoc(doc(db, COLLECTIONS.APPROVED_RECORDS, docId));
+    return Promise.all([p1, p2]);
   });
   await Promise.all(deletePromises);
 
@@ -84,57 +87,86 @@ export async function deleteEmployee(id) {
 
 // --- Records ---
 export async function getRecords() {
-  const querySnapshot = await getDocs(collection(db, COLLECTIONS.RECORDS));
-  return querySnapshot.docs.map(doc => doc.data());
+  const [q1, q2] = await Promise.all([
+    getDocs(collection(db, COLLECTIONS.RECORDS)),
+    getDocs(collection(db, COLLECTIONS.APPROVED_RECORDS))
+  ]);
+  const r1 = q1.docs.map(doc => doc.data());
+  const r2 = q2.docs.map(doc => doc.data());
+  return [...r1, ...r2];
 }
 
 export async function getRecordsByEmployee(employeeId) {
-  const q = query(collection(db, COLLECTIONS.RECORDS), where("employeeId", "==", employeeId));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => doc.data());
+  const [q1, q2] = await Promise.all([
+    getDocs(query(collection(db, COLLECTIONS.RECORDS), where("employeeId", "==", employeeId))),
+    getDocs(query(collection(db, COLLECTIONS.APPROVED_RECORDS), where("employeeId", "==", employeeId)))
+  ]);
+  const r1 = q1.docs.map(doc => doc.data());
+  const r2 = q2.docs.map(doc => doc.data());
+  return [...r1, ...r2];
 }
 
 export async function getRecordByDate(employeeId, date) {
-  // We use a specific ID to avoid duplicates: "employeeId_date"
   const docId = `${employeeId}_${date}`;
-  const docRef = doc(db, COLLECTIONS.RECORDS, docId);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    return docSnap.data();
-  }
+  // Check both collections
+  const [s1, s2] = await Promise.all([
+    getDoc(doc(db, COLLECTIONS.RECORDS, docId)),
+    getDoc(doc(db, COLLECTIONS.APPROVED_RECORDS, docId))
+  ]);
+  if (s1.exists()) return s1.data();
+  if (s2.exists()) return s2.data();
   return null;
 }
 
 export async function upsertRecord(record) {
   const docId = `${record.employeeId}_${record.date}`;
-  const docRef = doc(db, COLLECTIONS.RECORDS, docId);
+  const collectionName = record.approved ? COLLECTIONS.APPROVED_RECORDS : COLLECTIONS.RECORDS;
+  const docRef = doc(db, collectionName, docId);
   await setDoc(docRef, record, { merge: true });
 }
 
 export async function approveRecord(employeeId, date) {
   const docId = `${employeeId}_${date}`;
   const docRef = doc(db, COLLECTIONS.RECORDS, docId);
-  await updateDoc(docRef, {
-    approved: true,
-    approvedAt: new Date().toISOString(),
-  });
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists()) {
+    const data = { 
+      ...docSnap.data(), 
+      approved: true, 
+      approvedAt: new Date().toISOString() 
+    };
+    // Move to approved_records
+    await setDoc(doc(db, COLLECTIONS.APPROVED_RECORDS, docId), data);
+    await deleteDoc(docRef);
+  }
   return true;
 }
 
 export async function unapproveRecord(employeeId, date) {
   const docId = `${employeeId}_${date}`;
-  const docRef = doc(db, COLLECTIONS.RECORDS, docId);
-  await updateDoc(docRef, {
-    approved: false,
-    approvedAt: null,
-  });
+  const docRef = doc(db, COLLECTIONS.APPROVED_RECORDS, docId);
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists()) {
+    const data = { 
+      ...docSnap.data(), 
+      approved: false, 
+      approvedAt: null 
+    };
+    // Move back to records
+    await setDoc(doc(db, COLLECTIONS.RECORDS, docId), data);
+    await deleteDoc(docRef);
+  }
   return true;
 }
 
 export async function deleteRecord(employeeId, date) {
   const docId = `${employeeId}_${date}`;
-  const docRef = doc(db, COLLECTIONS.RECORDS, docId);
-  await deleteDoc(docRef);
+  await Promise.all([
+    deleteDoc(doc(db, COLLECTIONS.RECORDS, docId)),
+    deleteDoc(doc(db, COLLECTIONS.APPROVED_RECORDS, docId))
+  ]);
   return true;
 }
 
