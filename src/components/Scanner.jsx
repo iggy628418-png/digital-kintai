@@ -17,8 +17,10 @@ export default function Scanner({ onScan, onClose }) {
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length > 0) {
         setCameras(devices);
-        setActiveCamera(devices[0].id);
-        startScanner(html5QrCode, devices[0].id);
+        // Default to rear-facing camera
+        const initialCamera = { facingMode: "environment" };
+        setActiveCamera(initialCamera);
+        startScanner(html5QrCode, initialCamera);
       } else {
         setError('カメラが見つかりませんでした。');
       }
@@ -34,9 +36,9 @@ export default function Scanner({ onScan, onClose }) {
     };
   }, []);
 
-  const startScanner = (scannerInstance, cameraId) => {
+  const startScanner = (scannerInstance, cameraConfig) => {
     scannerInstance.start(
-      cameraId,
+      cameraConfig,
       {
         fps: 10,
         qrbox: { width: 250, height: 250 }
@@ -57,14 +59,24 @@ export default function Scanner({ onScan, onClose }) {
   const switchCamera = () => {
     if (!scanner || cameras.length < 2) return;
     
-    const currentIndex = cameras.findIndex(c => c.id === activeCamera);
-    const nextIndex = (currentIndex + 1) % cameras.length;
+    // Find next camera in the devices list
+    let nextIndex = 0;
+    if (typeof activeCamera === 'string') {
+      const currentIndex = cameras.findIndex(c => c.id === activeCamera);
+      nextIndex = (currentIndex + 1) % cameras.length;
+    } else {
+      // If was object-based config, just pick the first one (or second)
+      nextIndex = 1;
+    }
+    
     const nextCamera = cameras[nextIndex];
 
     if (scanner.isScanning) {
       scanner.stop().then(() => {
         setActiveCamera(nextCamera.id);
         startScanner(scanner, nextCamera.id);
+      }).catch(err => {
+        console.error("Stop failed during switch", err);
       });
     }
   };
