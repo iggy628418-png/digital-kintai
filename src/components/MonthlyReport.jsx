@@ -64,7 +64,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
 
   // CSV ダウンロード
   const downloadCSV = () => {
-    const header = ['従業員名', '日付', '出勤', '休憩入り', '休憩戻り', '退勤', '休憩時間', '実労働時間', '承認'];
+    const header = ['従業員名', '日付', '午前・開始', '午前・終了', '午後・開始', '午後・終了', '休憩時間計', '労働時間計', '承認印'];
     const rows = [];
     summaries.forEach(({ emp, dailyData }) => {
       dailyData.filter(d => d.hasData).forEach(d => {
@@ -165,17 +165,17 @@ export default function MonthlyReport({ onBack, initialMonth }) {
             <table className="print-table">
               <thead>
                 <tr>
-                  <th rowSpan={2} style={{ width: '15%' }}>月/日 (曜日)</th>
-                  <th colSpan={3}>午前</th>
-                  <th colSpan={3}>午後</th>
-                  <th rowSpan={2} style={{ width: '10%' }}>確認印</th>
+                  <th rowSpan={2} style={{ width: '13%' }}>月/日 (曜日)</th>
+                  <th colSpan={2}>午前</th>
+                  <th colSpan={2}>午後</th>
+                  <th rowSpan={2} style={{ width: '12%' }}>休憩時間計</th>
+                  <th rowSpan={2} style={{ width: '12%' }}>労働時間計</th>
+                  <th rowSpan={2} style={{ width: '10%' }}>承認印</th>
                 </tr>
                 <tr>
                   <th>開始</th>
-                  <th>休憩</th>
                   <th>終了</th>
                   <th>開始</th>
-                  <th>休憩</th>
                   <th>終了</th>
                 </tr>
               </thead>
@@ -192,13 +192,13 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                         {dateObj.getDate()}日 ({dow})
                       </td>
                       <td className="center">{d.morningIn || ''}</td>
-                      <td className="center"></td>
                       <td className="center">{d.morningOut || ''}</td>
                       <td className="center">{d.afternoonIn || ''}</td>
-                      <td className="center"></td>
                       <td className="center">{d.afternoonOut || ''}</td>
+                      <td className="center">{d.hasData ? minutesToDisplay(d.breakMinutes) : ''}</td>
+                      <td className="center">{d.hasData ? minutesToDisplay(d.minutes) : ''}</td>
                       <td className="center">
-                        {d.approved && <div className="stamp-placeholder">印</div>}
+                        {d.approved && <div className="stamp-placeholder">承</div>}
                       </td>
                     </tr>
                   );
@@ -207,10 +207,15 @@ export default function MonthlyReport({ onBack, initialMonth }) {
             </table>
 
             <div className="print-footer">
-              <div className="footer-item">勤務</div>
-              <div className="footer-item">公休</div>
-              <div className="footer-item">休業</div>
-              <div className="footer-item">有給</div>
+              <div className="footer-item">実働合計: <strong>{minutesToDisplay(summaries.find(s => s.emp.id === emp.id).totalMinutes)}</strong></div>
+              <div className="footer-item">休憩合計: <strong>{minutesToDisplay(summaries.find(s => s.emp.id === emp.id).totalBreakMinutes)}</strong></div>
+              <div className="footer-item">出勤日数: <strong>{summaries.find(s => s.emp.id === emp.id).workDays}日</strong></div>
+            </div>
+            <div className="print-footer second-footer">
+              <div className="footer-item">勤務 □</div>
+              <div className="footer-item">公休 □</div>
+              <div className="footer-item">休業 □</div>
+              <div className="footer-item">有給 □</div>
             </div>
           </div>
         ))}
@@ -225,60 +230,61 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           background: white;
           width: 210mm;
           min-height: 297mm;
-          padding: 20mm 15mm;
+          padding: 10mm 12mm;
           margin: 0 auto 2rem auto;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
           color: black;
           font-family: "Sawarabi Mincho", "Hiragino Mincho ProN", serif;
+          box-sizing: border-box;
         }
         .print-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
-          margin-bottom: 2rem;
+          margin-bottom: 1rem;
         }
         .print-ym {
-          font-size: 1.2rem;
+          font-size: 1.1rem;
           border-bottom: 1px solid black;
-          padding-bottom: 4px;
+          padding-bottom: 2px;
         }
         .ym-year, .ym-month {
-          font-size: 1.5rem;
-          margin-right: 4px;
+          font-size: 1.3rem;
+          margin-right: 2px;
         }
         .print-title {
-          font-size: 2rem;
+          font-size: 1.8rem;
           font-weight: normal;
           letter-spacing: 0.5em;
           margin: 0;
         }
         .print-name-box {
-          font-size: 1.2rem;
+          font-size: 1.1rem;
           border-bottom: 1px solid black;
-          min-width: 200px;
+          min-width: 180px;
           text-align: left;
         }
         .print-name {
-          font-size: 1.4rem;
-          margin-left: 1rem;
+          font-size: 1.3rem;
+          margin-left: 0.5rem;
         }
         .print-table {
           width: 100%;
           border-collapse: collapse;
-          border: 2px solid black;
+          border: 1.5px solid black;
         }
         .print-table th, .print-table td {
           border: 1px solid black;
-          height: 2rem;
-          padding: 4px;
+          height: 1.6rem;
+          padding: 2px 4px;
+          font-size: 0.8rem;
         }
         .print-table th {
           background: #f8f8f8;
           font-weight: normal;
-          font-size: 0.9rem;
         }
         .center { text-align: center; }
-        .weekend-row { background: #fcfcfc; }
+        .weekend-row { background: #fdfdfd; }
         
         .stamp-placeholder {
           width: 24px;
@@ -286,7 +292,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           border: 1px solid #ef4444;
           border-radius: 50%;
           color: #ef4444;
-          font-size: 0.6rem;
+          font-size: 0.7rem;
+          font-weight: bold;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -294,10 +301,14 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         }
 
         .print-footer {
-          margin-top: 2rem;
+          margin-top: 1rem;
           display: flex;
-          gap: 2rem;
-          font-size: 0.9rem;
+          gap: 1.5rem;
+          font-size: 0.85rem;
+        }
+        .second-footer {
+          margin-top: 0.5rem;
+          opacity: 0.8;
         }
 
         @media print {
@@ -309,9 +320,10 @@ export default function MonthlyReport({ onBack, initialMonth }) {
             margin: 0;
             width: 100%;
             height: auto;
+            min-height: 100vh;
             break-after: page;
           }
-          body { background: white; }
+          body { background: white; margin: 0; padding: 0; }
           @page {
             size: A4;
             margin: 0;
