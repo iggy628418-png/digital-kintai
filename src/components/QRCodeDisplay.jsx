@@ -3,7 +3,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { ArrowLeft, Printer } from 'lucide-react';
 
 // 打刻に使用するQRコードの内容
-const QR_CODE_VALUE = '2026PUNCH';
+const QR_IN  = 'WAKAMATSAYA-KINTAI-IN-2026';
+const QR_OUT = 'WAKAMATSAYA-KINTAI-OUT-2026';
 
 export default function QRCodeDisplay({ onBack }) {
   const handlePrint = () => {
@@ -39,11 +40,7 @@ export default function QRCodeDisplay({ onBack }) {
               打刻用 共通QRコード
             </div>
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', display: 'inline-block', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
-              <QRCodeSVG value={QR_CODE_VALUE} size={320} level="H" includeMargin={true} />
-            </div>
-            <div style={{ marginBottom: '1.5rem', padding: '0.5rem', background: '#fff', border: '1px dashed var(--secondary)', borderRadius: '0.5rem', display: 'inline-block' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>読み込めない時の手動コード:</span><br/>
-              <strong style={{ fontSize: '1.4rem', color: 'var(--secondary)', letterSpacing: '0.1em' }}>{QR_CODE_VALUE}</strong>
+              <QRCodeSVG value={QR_IN} size={320} level="H" includeMargin={true} />
             </div>
             <p style={{ fontSize: '1rem', color: 'var(--text-main)', fontWeight: 700, lineHeight: 1.6 }}>
               これ1つで「出勤」も「退勤」も完結します。<br/>

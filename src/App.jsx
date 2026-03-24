@@ -27,7 +27,8 @@ import QRCodeDisplay from './components/QRCodeDisplay';
 import MonthlyReport from './components/MonthlyReport';
 import Scanner from './components/Scanner';
 
-const QR_CODE_VALUE = '2026PUNCH';
+const QR_IN  = 'WAKAMATSAYA-KINTAI-IN-2026';
+const QR_OUT = 'WAKAMATSAYA-KINTAI-OUT-2026';
 
 // URLのハッシュで従業員・管理者を切り替えるフック
 function useMode() {
@@ -122,7 +123,7 @@ function EmployeeApp() {
       return;
     }
 
-    const isUniversalQR = (decodedText === QR_CODE_VALUE);
+    const isUniversalQR = (decodedText === QR_IN || decodedText === QR_OUT);
 
     if (!isUniversalQR) {
       alert('無効なQRコードです。');

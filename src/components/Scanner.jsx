@@ -117,14 +117,14 @@ export default function Scanner({ onScan, onClose }) {
               打刻コードを入力
             </p>
             <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-              QRコードの下に表示されている<br/><strong>打刻コード（例: 2026PUNCH）</strong>を入力してください
+              QRコードに記載されているコードを入力してください
             </p>
             <input
               type="text"
               value={manualCode}
-              onChange={e => setManualCode(e.target.value.toUpperCase())}
+              onChange={e => setManualCode(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleManualSubmit()}
-              placeholder="2026PUNCH"
+              placeholder="WAKAMATSAYA-KINTAI-PUNCH-2026"
               style={{
                 width: '100%',
                 padding: '0.75rem 1rem',
