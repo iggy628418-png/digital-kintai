@@ -66,7 +66,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     const totalBreakMinutes = dailyData.reduce((s, d) => s + d.breakMinutes, 0);
     const workDays = dailyData.filter(d => d.hasData).length;
     return { emp, dailyData, totalMinutes, totalBreakMinutes, workDays };
-  });
+  }).filter(s => s.workDays > 0);
 
   // CSV ダウンロード
   const downloadCSV = () => {
