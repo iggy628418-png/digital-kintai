@@ -283,16 +283,18 @@ export default function MonthlyReport({ onBack, initialMonth }) {
               </tbody>
             </table>
 
-            <div className="print-footer">
-              <div className="footer-item">実働合計: <strong>{minutesToDisplay(summaries.find(s => s.emp.id === emp.id).totalMinutes)}</strong></div>
-              <div className="footer-item">休憩合計: <strong>{minutesToDisplay(summaries.find(s => s.emp.id === emp.id).totalBreakMinutes)}</strong></div>
-              <div className="footer-item">出勤日数: <strong>{summaries.find(s => s.emp.id === emp.id).workDays}日</strong></div>
-            </div>
-            <div className="print-footer second-footer">
-              <div className="footer-item">勤務 □</div>
-              <div className="footer-item">公休 □</div>
-              <div className="footer-item">休業 □</div>
-              <div className="footer-item">有給 □</div>
+            <div className="print-footer-group">
+              <div className="print-footer">
+                <div className="footer-item">実働合計: <strong>{minutesToDisplay(summaries.find(s => s.emp.id === emp.id).totalMinutes)}</strong></div>
+                <div className="footer-item">休憩合計: <strong>{minutesToDisplay(summaries.find(s => s.emp.id === emp.id).totalBreakMinutes)}</strong></div>
+                <div className="footer-item">出勤日数: <strong>{summaries.find(s => s.emp.id === emp.id).workDays}日</strong></div>
+              </div>
+              <div className="print-footer second-footer">
+                <div className="footer-item">勤務 □</div>
+                <div className="footer-item">公休 □</div>
+                <div className="footer-item">休業 □</div>
+                <div className="footer-item">有給 □</div>
+              </div>
             </div>
           </div>
         ))}
@@ -314,8 +316,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         .print-page {
           background: white;
           width: 210mm;
-          min-height: 296.5mm; /* A4 height slightly less to avoid blank page */
-          padding: 12mm 15mm;
+          height: 296.5mm; /* Fixed height to force single page */
+          padding: 8mm 15mm;
           margin: 0 auto;
           box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
           color: black;
@@ -324,6 +326,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           position: relative;
           display: flex;
           flex-direction: column;
+          overflow: hidden;
         }
         .print-header {
           display: flex;
@@ -370,9 +373,9 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         }
         .print-table th, .print-table td {
           border: 1px solid black;
-          height: 7.2mm; /* Total height around 220mm for 31 days */
+          height: 6.8mm; /* Reduced to fit 31 days nicely */
           padding: 1px 4px;
-          font-size: 0.9rem;
+          font-size: 0.85rem;
         }
         .print-table th {
           background: #f1f5f9;
@@ -382,8 +385,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         .weekend-row { background: #f8fafc; }
         
         .stamp-placeholder {
-          width: 24px;
-          height: 24px;
+          width: 22px;
+          height: 22px;
           border: 1px solid #ef4444;
           border-radius: 50%;
           color: #ef4444;
@@ -395,16 +398,18 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           margin: 0 auto;
         }
 
-        .print-footer {
+        .print-footer-group {
           margin-top: auto;
-          padding-top: 5mm;
+          border-top: 1px dashed #ccc;
+          padding-top: 2mm;
+        }
+        .print-footer {
           display: flex;
           gap: 2rem;
           font-size: 0.9rem;
-          border-top: 1px dashed #ccc;
         }
         .second-footer {
-          margin-top: 2mm;
+          margin-top: 1mm;
           padding-top: 0;
           border-top: none;
           display: flex;
