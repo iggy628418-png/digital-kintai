@@ -105,7 +105,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     const element = document.querySelector('.print-content');
     const opt = {
       margin:       0,
-      filename:     `勤務表_${month}.pdf`,
+      filename:     `勤務表_一括_${month}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -116,9 +116,29 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       await html2pdf().from(element).set(opt).save();
     } catch (error) {
       console.error('PDF Generation error:', error);
-      alert('PDFの作成中にエラーが発生しました。印刷メニューから「PDFとして保存」もお試しください。');
+      alert('PDFの作成中にエラーが発生しました。');
     } finally {
       setIsGeneratingPDF(false);
+    }
+  };
+
+  const handleDownloadSinglePDF = async (emp, empMonthData) => {
+    const element = document.getElementById(`print-page-${emp.id}`);
+    if (!element) return;
+    
+    const opt = {
+      margin:       0,
+      filename:     `勤務表_${emp.name}_${month}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    try {
+      await html2pdf().from(element).set(opt).save();
+    } catch (error) {
+      console.error('Single PDF error:', error);
+      alert('PDF出力に失敗しました。');
     }
   };
 
@@ -133,13 +153,13 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           <ArrowLeft size={24} color="white" />
         </button>
         <span className="header-title" style={{ background: 'white', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          勤務集計レポート
+          勤怠集計
         </span>
         <div style={{ display: 'flex', gap: '0.4rem' }}>
           <button onClick={downloadCSV} title="CSVダウンロード" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <Download size={20} color="white" />
           </button>
-          <button onClick={handleDownloadPDF} title="PDFダウンロード" disabled={isGeneratingPDF} style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isGeneratingPDF ? 0.5 : 1 }}>
+          <button onClick={handleDownloadPDF} title="全員まとめてPDF" disabled={isGeneratingPDF} style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isGeneratingPDF ? 0.5 : 1 }}>
             <FileText size={20} color="white" />
           </button>
           <button onClick={handlePrint} title="印刷" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -149,7 +169,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       </header>
 
       <main className="no-print" style={{ padding: '1rem' }}>
-        {/* 月選択（印刷時非表示） */}
+        {/* 月選択 */}
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
             <BarChart2 size={18} color="var(--primary)" />
@@ -161,28 +181,53 @@ export default function MonthlyReport({ onBack, initialMonth }) {
             onChange={e => setMonth(e.target.value)}
             style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)', boxSizing: 'border-box' }}
           />
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
-            <button onClick={downloadCSV} className="btn btn-outline" style={{ flex: 1, minWidth: '100px', fontSize: '0.8rem' }}>
-              <Download size={14} /> CSV保存
+        </div>
+
+        {/* 従業員一覧と個別出力 */}
+        <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Download size={18} /> 個別・一括出力
+          </h3>
+          <div style={{ display: 'grid', gap: '0.75rem' }}>
+            {summaries.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>データがありません</p>
+            ) : (
+              summaries.map(s => (
+                <div key={s.emp.id} style={{ 
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                  padding: '0.75rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' 
+                }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{s.emp.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>実働: {minutesToDisplay(s.totalMinutes)} / 出勤: {s.workDays}日</div>
+                  </div>
+                  <button onClick={() => handleDownloadSinglePDF(s.emp, s)} className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: 'white' }}>
+                    <FileText size={14} /> PDF
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+            <button onClick={handleDownloadPDF} className="btn btn-primary" disabled={isGeneratingPDF} style={{ flex: 1, fontSize: '0.8rem', background: '#4f46e5' }}>
+              <FileText size={16} /> {isGeneratingPDF ? '作成中...' : '全員まとめてPDF保存'}
             </button>
-            <button onClick={handleDownloadPDF} className="btn btn-primary" disabled={isGeneratingPDF} style={{ flex: 1, minWidth: '100px', fontSize: '0.8rem', background: '#4f46e5' }}>
-              <FileText size={14} /> {isGeneratingPDF ? '作成中...' : 'PDF保存'}
-            </button>
-            <button onClick={handlePrint} className="btn btn-primary" style={{ flex: 1, minWidth: '100px', fontSize: '0.8rem', background: '#334155' }}>
-              <Printer size={14} /> 印刷/保存
+            <button onClick={handlePrint} className="btn btn-primary" style={{ flex: 1, fontSize: '0.8rem', background: '#334155' }}>
+              <Printer size={16} /> 印刷/保存
             </button>
           </div>
         </div>
 
         <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
-          ※「印刷用表示」ボタンを押すと、写真のようなフォーマットで1人1ページずつ出力されます。
+          ※「印刷/保存」ボタンでA4縦の印刷イメージを確認・出力できます。
         </div>
       </main>
 
       {/* 印刷用プレビュー / 実際の印刷内容 */}
       <div className="print-content">
         {summaries.map(({ emp, dailyData }) => (
-          <div key={emp.id} className="print-page">
+          <div key={emp.id} className="print-page" id={`print-page-${emp.id}`}>
             <div className="print-header">
               <div className="print-ym">
                 <span className="ym-year">{y}</span>年
@@ -254,69 +299,87 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       </div>
 
       <style>{`
+        .report-container {
+          min-height: 100vh;
+          background: #f8fafc;
+        }
         .print-content {
-          padding: 2rem;
-          background: #f1f5f9;
+          padding: 2rem 0;
+          background: #e2e8f0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2rem;
         }
         .print-page {
           background: white;
           width: 210mm;
-          min-height: 297mm;
-          padding: 10mm 12mm;
-          margin: 0 auto 2rem auto;
-          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+          min-height: 296.5mm; /* A4 height slightly less to avoid blank page */
+          padding: 12mm 15mm;
+          margin: 0 auto;
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
           color: black;
           font-family: "Sawarabi Mincho", "Hiragino Mincho ProN", serif;
           box-sizing: border-box;
+          position: relative;
+          display: flex;
+          flex-direction: column;
         }
         .print-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
-          margin-bottom: 1rem;
+          margin-bottom: 2mm;
+          border-bottom: 2px solid black;
+          padding-bottom: 1mm;
         }
         .print-ym {
           font-size: 1.1rem;
-          border-bottom: 1px solid black;
           padding-bottom: 2px;
         }
         .ym-year, .ym-month {
           font-size: 1.3rem;
           margin-right: 2px;
+          font-weight: bold;
         }
         .print-title {
           font-size: 1.8rem;
           font-weight: normal;
           letter-spacing: 0.5em;
           margin: 0;
+          flex-grow: 1;
+          text-align: center;
         }
         .print-name-box {
-          font-size: 1.1rem;
-          border-bottom: 1px solid black;
-          min-width: 180px;
-          text-align: left;
+          font-size: 1rem;
+          min-width: 200px;
+          text-align: right;
         }
         .print-name {
           font-size: 1.3rem;
           margin-left: 0.5rem;
+          border-bottom: 1px solid black;
+          padding: 0 1rem;
+          font-weight: bold;
         }
         .print-table {
           width: 100%;
           border-collapse: collapse;
           border: 1.5px solid black;
+          margin-bottom: 5mm;
         }
         .print-table th, .print-table td {
           border: 1px solid black;
-          height: 1.6rem;
-          padding: 2px 4px;
-          font-size: 0.8rem;
+          height: 7.2mm; /* Total height around 220mm for 31 days */
+          padding: 1px 4px;
+          font-size: 0.9rem;
         }
         .print-table th {
-          background: #f8f8f8;
-          font-weight: normal;
+          background: #f1f5f9;
+          font-weight: bold;
         }
         .center { text-align: center; }
-        .weekend-row { background: #fdfdfd; }
+        .weekend-row { background: #f8fafc; }
         
         .stamp-placeholder {
           width: 24px;
@@ -333,31 +396,41 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         }
 
         .print-footer {
-          margin-top: 1rem;
+          margin-top: auto;
+          padding-top: 5mm;
           display: flex;
-          gap: 1.5rem;
-          font-size: 0.85rem;
+          gap: 2rem;
+          font-size: 0.9rem;
+          border-top: 1px dashed #ccc;
         }
         .second-footer {
-          margin-top: 0.5rem;
-          opacity: 0.8;
+          margin-top: 2mm;
+          padding-top: 0;
+          border-top: none;
+          display: flex;
+          gap: 1.5rem;
+          font-size: 0.8rem;
+          color: #444;
         }
 
         @media print {
           title { display: none; }
           .no-print { display: none !important; }
-          .print-content { padding: 0; background: none; }
+          .print-content { 
+            padding: 0 !important; 
+            margin: 0 !important; 
+            background: none !important; 
+            display: block !important;
+          }
           .print-page {
-            box-shadow: none;
-            margin: 0;
-            width: 100%;
-            height: auto;
-            min-height: 100vh;
+            box-shadow: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
             break-after: page;
           }
-          body { background: white; margin: 0; padding: 0; }
           @page {
-            size: A4;
+            size: A4 portrait;
             margin: 0;
           }
         }
