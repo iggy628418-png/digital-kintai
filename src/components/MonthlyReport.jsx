@@ -103,9 +103,14 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     setIsGeneratingPDF(true);
     
     const element = document.querySelector('.print-content');
+    const originalGap = element.style.gap;
+    const originalPadding = element.style.padding;
+    element.style.gap = '0';
+    element.style.padding = '0';
+
     const opt = {
       margin:       0,
-      filename:     `勤務表_一括_${month}.pdf`,
+      filename:     `勤務表_全て_${month}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -118,6 +123,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       console.error('PDF Generation error:', error);
       alert('PDFの作成中にエラーが発生しました。');
     } finally {
+      element.style.gap = originalGap;
+      element.style.padding = originalPadding;
       setIsGeneratingPDF(false);
     }
   };
@@ -159,7 +166,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           <button onClick={downloadCSV} title="CSVダウンロード" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <Download size={20} color="white" />
           </button>
-          <button onClick={handleDownloadPDF} title="全員まとめてPDF" disabled={isGeneratingPDF} style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isGeneratingPDF ? 0.5 : 1 }}>
+          <button onClick={handleDownloadPDF} title="全てPDF" disabled={isGeneratingPDF} style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isGeneratingPDF ? 0.5 : 1 }}>
             <FileText size={20} color="white" />
           </button>
           <button onClick={handlePrint} title="印刷" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -211,7 +218,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
 
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
             <button onClick={handleDownloadPDF} className="btn btn-primary" disabled={isGeneratingPDF} style={{ flex: 1, fontSize: '0.8rem', background: '#4f46e5' }}>
-              <FileText size={16} /> {isGeneratingPDF ? '作成中...' : '全員まとめてPDF保存'}
+              <FileText size={16} /> {isGeneratingPDF ? '作成中...' : '全て保存'}
             </button>
             <button onClick={handlePrint} className="btn btn-primary" style={{ flex: 1, fontSize: '0.8rem', background: '#334155' }}>
               <Printer size={16} /> 印刷/保存
@@ -316,7 +323,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         .print-page {
           background: white;
           width: 210mm;
-          height: 296.5mm; /* Fixed height to force single page */
+          height: 296mm; /* Adjusted to prevent spill into blank page */
           padding: 8mm 15mm;
           margin: 0 auto;
           box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
@@ -327,6 +334,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           display: flex;
           flex-direction: column;
           overflow: hidden;
+          page-break-after: always;
         }
         .print-header {
           display: flex;
