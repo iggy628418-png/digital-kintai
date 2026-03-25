@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, Printer, BarChart2 } from 'lucide-react';
+import { ArrowLeft, Download, Printer, BarChart2, FileText } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
 import { getEmployees, getRecords } from '../utils/storage';
 import {
   calcDailyMinutes,
@@ -21,6 +22,7 @@ function getMonthDays(yearMonth) {
 export default function MonthlyReport({ onBack, initialMonth }) {
   const [employees, setEmployees] = useState([]);
   const [records, setRecords]     = useState([]);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [month, setMonth]         = useState(initialMonth || (() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -96,6 +98,30 @@ export default function MonthlyReport({ onBack, initialMonth }) {
 
   const handlePrint = () => window.print();
 
+  const handleDownloadPDF = async () => {
+    if (isGeneratingPDF) return;
+    setIsGeneratingPDF(true);
+    
+    const element = document.querySelector('.print-content');
+    const opt = {
+      margin:       0,
+      filename:     `勤務表_${month}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    try {
+      await html2pdf().from(element).set(opt).save();
+    } catch (error) {
+      console.error('PDF Generation error:', error);
+      alert('PDFの作成中にエラーが発生しました。印刷メニューから「PDFとして保存」もお試しください。');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   const [y, m] = month.split('-');
   const monthLabel = `${y}年${Number(m)}月`;
 
@@ -109,12 +135,15 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         <span className="header-title" style={{ background: 'white', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           勤務集計レポート
         </span>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
           <button onClick={downloadCSV} title="CSVダウンロード" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-            <Download size={22} color="white" />
+            <Download size={20} color="white" />
+          </button>
+          <button onClick={handleDownloadPDF} title="PDFダウンロード" disabled={isGeneratingPDF} style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: isGeneratingPDF ? 0.5 : 1 }}>
+            <FileText size={20} color="white" />
           </button>
           <button onClick={handlePrint} title="印刷" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-            <Printer size={22} color="white" />
+            <Printer size={20} color="white" />
           </button>
         </div>
       </header>
@@ -132,12 +161,15 @@ export default function MonthlyReport({ onBack, initialMonth }) {
             onChange={e => setMonth(e.target.value)}
             style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)', boxSizing: 'border-box' }}
           />
-          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
-            <button onClick={downloadCSV} className="btn btn-outline" style={{ flex: 1, fontSize: '0.875rem' }}>
-              <Download size={16} />CSV保存
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
+            <button onClick={downloadCSV} className="btn btn-outline" style={{ flex: 1, minWidth: '100px', fontSize: '0.8rem' }}>
+              <Download size={14} /> CSV保存
             </button>
-            <button onClick={handlePrint} className="btn btn-primary" style={{ flex: 1, fontSize: '0.875rem', background: '#334155' }}>
-              <Printer size={16} />印刷用表示
+            <button onClick={handleDownloadPDF} className="btn btn-primary" disabled={isGeneratingPDF} style={{ flex: 1, minWidth: '100px', fontSize: '0.8rem', background: '#4f46e5' }}>
+              <FileText size={14} /> {isGeneratingPDF ? '作成中...' : 'PDF保存'}
+            </button>
+            <button onClick={handlePrint} className="btn btn-primary" style={{ flex: 1, minWidth: '100px', fontSize: '0.8rem', background: '#334155' }}>
+              <Printer size={14} /> 印刷/保存
             </button>
           </div>
         </div>
