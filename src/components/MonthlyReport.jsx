@@ -140,6 +140,10 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     const element = document.getElementById(`print-page-${emp.id}`);
     if (!element) return;
     
+    // 親要素に一時的にクラスを追加して表示を確実にする
+    const container = document.querySelector('.print-content');
+    container.classList.add('is-generating');
+
     const opt = {
       margin:       0,
       filename:     `勤務表_${emp.name}_${month}.pdf`,
@@ -153,6 +157,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     } catch (error) {
       console.error('Single PDF error:', error);
       alert('PDF出力に失敗しました。');
+    } finally {
+      container.classList.remove('is-generating');
     }
   };
 
