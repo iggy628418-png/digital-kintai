@@ -140,9 +140,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     const element = document.getElementById(`print-page-${emp.id}`);
     if (!element) return;
     
-    // 親要素に一時的にクラスを追加して表示を確実にする
-    const container = document.querySelector('.print-content');
-    container.classList.add('is-generating');
+    // 要素を一時的に表示状態にする
+    element.classList.add('is-generating');
 
     const opt = {
       margin:       0,
@@ -158,7 +157,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       console.error('Single PDF error:', error);
       alert('PDF出力に失敗しました。');
     } finally {
-      container.classList.remove('is-generating');
+      element.classList.remove('is-generating');
     }
   };
 
@@ -369,11 +368,9 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           overflow: hidden;
           page-break-after: always;
         }
-        .print-page.is-active {
-          display: flex; /* Show selected person or all when filtered is null */
-        }
-        .print-content.is-generating .print-page {
-          display: flex !important; /* Force show for PDF generation */
+        .print-page.is-active,
+        .print-page.is-generating {
+          display: flex !important; /* Show selected person or during PDF generation */
         }
         .print-header {
           display: flex;
