@@ -23,6 +23,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
   const [employees, setEmployees] = useState([]);
   const [records, setRecords]     = useState([]);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [selectedEmpId, setSelectedEmpId] = useState(null);
   const [month, setMonth]         = useState(initialMonth || (() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -34,6 +35,9 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       const recs = await getRecords();
       setEmployees(emps);
       setRecords(recs);
+      if (emps.length > 0 && !selectedEmpId) {
+        setSelectedEmpId(emps[0].id);
+      }
     };
     loadData();
   }, []);
@@ -103,6 +107,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     setIsGeneratingPDF(true);
     
     const element = document.querySelector('.print-content');
+    element.classList.add('is-generating');
+    
     const originalGap = element.style.gap;
     const originalPadding = element.style.padding;
     element.style.gap = '0';
@@ -123,6 +129,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       console.error('PDF Generation error:', error);
       alert('PDFの作成中にエラーが発生しました。');
     } finally {
+      element.classList.remove('is-generating');
       element.style.gap = originalGap;
       element.style.padding = originalPadding;
       setIsGeneratingPDF(false);
@@ -200,19 +207,36 @@ export default function MonthlyReport({ onBack, initialMonth }) {
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>データがありません</p>
             ) : (
               summaries.map(s => (
-                <div key={s.emp.id} style={{ 
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                  padding: '0.75rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' 
-                }}>
+                <div key={s.emp.id} 
+                  onClick={() => setSelectedEmpId(s.emp.id)}
+                  style={{ 
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                    padding: '0.75rem', 
+                    background: selectedEmpId === s.emp.id ? '#eff6ff' : '#f8fafc', 
+                    borderRadius: '0.75rem', 
+                    border: selectedEmpId === s.emp.id ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                    cursor: 'pointer'
+                  }}>
                   <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{s.emp.name}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: selectedEmpId === s.emp.id ? '#1d4ed8' : 'inherit' }}>
+                      {s.emp.name} {selectedEmpId === s.emp.id && ' (閲覧中)'}
+                    </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>実働: {minutesToDisplay(s.totalMinutes)} / 出勤: {s.workDays}日</div>
                   </div>
-                  <button onClick={() => handleDownloadSinglePDF(s.emp, s)} className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: 'white' }}>
+                  <button onClick={(e) => { e.stopPropagation(); handleDownloadSinglePDF(s.emp, s); }} className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: 'white' }}>
                     <FileText size={14} /> PDF
                   </button>
                 </div>
               ))
+            )}
+            {/* 全て表示へのリセットボタン（デバッグ・確認用） */}
+            {selectedEmpId && (
+              <button 
+                onClick={() => setSelectedEmpId(null)} 
+                style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '0.8rem', cursor: 'pointer', marginTop: '0.5rem', fontWeight: 700 }}
+              >
+                ← 全従業員を一覧表示する
+              </button>
             )}
           </div>
 
@@ -234,7 +258,10 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       {/* 印刷用プレビュー / 実際の印刷内容 */}
       <div className="print-content">
         {summaries.map(({ emp, dailyData }) => (
-          <div key={emp.id} className="print-page" id={`print-page-${emp.id}`}>
+          <div key={emp.id} 
+            className={`print-page ${(!selectedEmpId || selectedEmpId === emp.id) ? 'is-active' : ''}`} 
+            id={`print-page-${emp.id}`}
+          >
             <div className="print-header">
               <div className="print-ym">
                 <span className="ym-year">{y}</span>年
@@ -321,6 +348,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           gap: 2rem;
         }
         .print-page {
+          display: none; /* Hide all on screen by default */
           background: white;
           width: 210mm;
           height: 296mm; /* Adjusted to prevent spill into blank page */
@@ -331,10 +359,15 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           font-family: "Sawarabi Mincho", "Hiragino Mincho ProN", serif;
           box-sizing: border-box;
           position: relative;
-          display: flex;
           flex-direction: column;
           overflow: hidden;
           page-break-after: always;
+        }
+        .print-page.is-active {
+          display: flex; /* Show selected person or all when filtered is null */
+        }
+        .print-content.is-generating .print-page {
+          display: flex !important; /* Force show for PDF generation */
         }
         .print-header {
           display: flex;
