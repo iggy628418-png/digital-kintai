@@ -46,6 +46,10 @@ export default function QRCodeDisplay({ onBack }) {
               これ1つで「出勤」も「退勤」も完結します。<br/>
               スキャンのたびに、自動で次の状態へ進みます。
             </p>
+            <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fef2f2', borderRadius: '0.5rem', border: '1px solid #fecaca', fontSize: '0.875rem', color: '#b91c1c' }}>
+              <strong>※カメラが使えない場合の緊急手入力コード: 8888</strong><br/>
+              「手動入力」画面でこの番号を入れて打刻できます。
+            </div>
           </div>
         </div>
 

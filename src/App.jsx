@@ -29,6 +29,7 @@ import Scanner from './components/Scanner';
 
 const QR_IN  = 'WAKAMATSAYA-KINTAI-IN-2026';
 const QR_OUT = 'WAKAMATSAYA-KINTAI-OUT-2026';
+const MANUAL_KEY = '8888';
 
 // URLのハッシュで従業員・管理者を切り替えるフック
 function useMode() {
@@ -123,7 +124,7 @@ function EmployeeApp() {
       return;
     }
 
-    const isUniversalQR = (decodedText === QR_IN || decodedText === QR_OUT);
+    const isUniversalQR = (decodedText === QR_IN || decodedText === QR_OUT || decodedText === MANUAL_KEY);
 
     if (!isUniversalQR) {
       alert('無効なQRコードです。');

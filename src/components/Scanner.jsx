@@ -9,6 +9,7 @@ export default function Scanner({ onScan, onClose }) {
   const [error, setError] = useState('');
   const [manualMode, setManualMode] = useState(false);
   const [manualCode, setManualCode] = useState('');
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     const html5QrCode = new Html5Qrcode("reader");
@@ -23,10 +24,14 @@ export default function Scanner({ onScan, onClose }) {
         startScanner(html5QrCode, initialCamera);
       } else {
         setError('カメラが見つかりませんでした。');
+        setIsInitializing(false);
       }
     }).catch(err => {
       console.error('Camera error:', err);
-      setError('カメラのアクセス権限を確認してください。');
+      setTimeout(() => {
+        setError('カメラのアクセス権限を確認してください。');
+        setIsInitializing(false);
+      }, 500);
     });
 
     return () => {
@@ -51,8 +56,11 @@ export default function Scanner({ onScan, onClose }) {
       (errorMessage) => {
         // スキャン中のエラーは無視
       }
-    ).catch(err => {
+    ).then(() => {
+      setIsInitializing(false);
+    }).catch(err => {
       setError('スキャンの開始に失敗しました。');
+      setIsInitializing(false);
     });
   };
 
@@ -124,7 +132,7 @@ export default function Scanner({ onScan, onClose }) {
               value={manualCode}
               onChange={e => setManualCode(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleManualSubmit()}
-              placeholder="WAKAMATSAYA-KINTAI-PUNCH-2026"
+              placeholder="緊急用パスキー (例: 8888)"
               style={{
                 width: '100%',
                 padding: '0.75rem 1rem',
@@ -163,6 +171,13 @@ export default function Scanner({ onScan, onClose }) {
             >
               ← カメラに戻る
             </button>
+          </div>
+        ) : isInitializing ? (
+          /* ===== 初期化中 / 許可待ち ===== */
+          <div style={{ background: 'rgba(255,255,255,0.1)', padding: '2rem', borderRadius: '1rem', textAlign: 'center', color: 'white' }}>
+            <Camera size={48} style={{ marginBottom: '1rem', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
+            <p style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.5rem' }}>カメラを準備しています</p>
+            <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>「許可」を求められた場合は許可してください</p>
           </div>
         ) : error ? (
           /* ===== カメラエラー ===== */
