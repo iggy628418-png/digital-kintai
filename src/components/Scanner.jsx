@@ -172,13 +172,6 @@ export default function Scanner({ onScan, onClose }) {
               ← カメラに戻る
             </button>
           </div>
-        ) : isInitializing ? (
-          /* ===== 初期化中 / 許可待ち ===== */
-          <div style={{ background: 'rgba(255,255,255,0.1)', padding: '2rem', borderRadius: '1rem', textAlign: 'center', color: 'white' }}>
-            <Camera size={48} style={{ marginBottom: '1rem', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
-            <p style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.5rem' }}>カメラを準備しています</p>
-            <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>「許可」を求められた場合は許可してください</p>
-          </div>
         ) : error ? (
           /* ===== カメラエラー ===== */
           <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '1.5rem', borderRadius: '1rem', color: '#fca5a5', textAlign: 'center' }}>
@@ -216,22 +209,34 @@ export default function Scanner({ onScan, onClose }) {
             </div>
           </div>
         ) : (
-          /* ===== QRスキャンモード ===== */
-          <>
-            <div id="reader"></div>
-            <div style={{ color: 'white', textAlign: 'center', marginTop: '2rem' }}>
-              <p style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                QRコードをスキャン
-              </p>
-              <p style={{ opacity: 0.7, marginBottom: '1rem' }}>打刻用QRコードを枠内に収めてください</p>
-              <button
-                onClick={() => setManualMode(true)}
-                style={{ background: 'none', border: '1px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}
-              >
-                コードを手動入力する
-              </button>
-            </div>
-          </>
+          /* ===== QRスキャンモード & 初期化中 ===== */
+          <div style={{ position: 'relative', width: '100%' }}>
+            {/* readerのdivはマウント時から存在しないとライブラリがエラーで落ちる */}
+            <div id="reader" style={{ opacity: isInitializing ? 0 : 1, transition: 'opacity 0.3s' }}></div>
+            
+            {isInitializing && (
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.1)', borderRadius: '1rem', color: 'white', zIndex: 10 }}>
+                <Camera size={48} style={{ marginBottom: '1rem', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
+                <p style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.5rem' }}>カメラを準備しています</p>
+                <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>「許可」を求められた場合は許可してください</p>
+              </div>
+            )}
+            
+            {!isInitializing && (
+              <div style={{ color: 'white', textAlign: 'center', marginTop: '2rem' }}>
+                <p style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                  QRコードをスキャン
+                </p>
+                <p style={{ opacity: 0.7, marginBottom: '1rem' }}>打刻用QRコードを枠内に収めてください</p>
+                <button
+                  onClick={() => setManualMode(true)}
+                  style={{ background: 'none', border: '1px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}
+                >
+                  コードを手動入力する
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
