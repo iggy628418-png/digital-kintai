@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode, Trash2 } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode, Trash2, PlusCircle } from 'lucide-react';
 import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord, deleteRecord, deleteEmployee } from '../utils/storage';
 import { formatDateJP, calcDailyMinutes, calcBreakMinutes, minutesToDisplay } from '../utils/timeLogic';
 
@@ -21,6 +21,17 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
   const [editingKey, setEditingKey] = useState(null);
   const [editValues, setEditValues] = useState({});
 
+  // 新規追加フォームの状態
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newRecord, setNewRecord] = useState({
+    employeeId: '',
+    date: new Date().toISOString().split('T')[0],
+    morningIn: '',
+    morningOut: '',
+    afternoonIn: '',
+    afternoonOut: '',
+  });
+
   const reload = async () => {
     const emps = await getEmployees();
     const recs = await getRecords();
@@ -29,6 +40,40 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
   };
 
   useEffect(() => { reload(); }, []);
+
+  const handleAddRecord = async (e) => {
+    e.preventDefault();
+    if (!newRecord.employeeId || !newRecord.date) {
+      alert('従業員と日付を選択してください。');
+      return;
+    }
+    
+    // 既存データのチェック
+    const existing = records.find(r => r.employeeId === newRecord.employeeId && r.date === newRecord.date);
+    if (existing) {
+      if (!window.confirm('指定された日付には既に記録があります。上書きして修正しますか？')) {
+        return;
+      }
+    }
+
+    const data = {
+      ...newRecord,
+      approved: false,
+    };
+    
+    await upsertRecord(data);
+    alert('記録を保存しました。');
+    setShowAddForm(false);
+    setNewRecord({
+      employeeId: '',
+      date: new Date().toISOString().split('T')[0],
+      morningIn: '',
+      morningOut: '',
+      afternoonIn: '',
+      afternoonOut: '',
+    });
+    await reload();
+  };
 
   const handleApprove = async (employeeId, date) => {
     if (await approveRecord(employeeId, date)) reload();
@@ -140,6 +185,71 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
             <QrCode size={18} />
             QRコードを表示・印刷する
           </button>
+        </div>
+
+        {/* 新規記録の手動追加 */}
+        <div className="card" style={{ marginBottom: '1.5rem', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showAddForm ? '1rem' : '0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <PlusCircle size={18} color="#16a34a" />
+              <span style={{ fontWeight: 700, color: '#166534' }}>勤務記録の追加・修正</span>
+            </div>
+            <button 
+              onClick={() => setShowAddForm(!showAddForm)}
+              style={{ background: 'none', border: 'none', color: '#16a34a', fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem' }}
+            >
+              {showAddForm ? '閉じる' : 'フォームを開く'}
+            </button>
+          </div>
+
+          {showAddForm && (
+            <form onSubmit={handleAddRecord} style={{ marginTop: '1rem', display: 'grid', gap: '1rem' }}>
+              <div className="input-group">
+                <label className="input-label">従業員</label>
+                <select 
+                  value={newRecord.employeeId} 
+                  onChange={e => setNewRecord(v => ({ ...v, employeeId: e.target.value }))}
+                  required
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}
+                >
+                  <option value="">選択してください</option>
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">日付</label>
+                <input 
+                  type="date" 
+                  value={newRecord.date}
+                  onChange={e => setNewRecord(v => ({ ...v, date: e.target.value }))}
+                  required
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                {TIME_FIELDS.map(({ key, label }) => (
+                  <div key={key}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>{label}</label>
+                    <input 
+                      type="time" 
+                      value={newRecord[key]}
+                      onChange={e => setNewRecord(v => ({ ...v, [key]: e.target.value }))}
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid var(--border)' }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ background: '#16a34a' }}>
+                <Save size={18} />
+                この内容で保存する
+              </button>
+            </form>
+          )}
         </div>
 
         {/* 登録従業員の管理 */}
