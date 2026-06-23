@@ -94,7 +94,8 @@ export function getPunchTheme(type) {
 
 // 現在の状態のラベル
 export function getCurrentStatusLabel(record) {
-  if (!record || !record.morningIn) return '未出勤';
+  // 午後のみ出勤（morningIn なし、afternoonIn あり）にも対応
+  if (!record || (!record.morningIn && !record.afternoonIn)) return '未出勤';
   if (record.afternoonOut) return '退勤済み';
   if (record.morningOut && !record.afternoonIn) return '休憩中';
   return '勤務中';
@@ -119,9 +120,11 @@ export function minutesToDisplay(totalMinutes) {
 
 // 1日の勤務時間を分単位で計算 (休憩を考慮)
 export function calcDailyMinutes(record) {
-  if (!record || !record.morningIn) return 0;
+  // 午後のみ出勤（morningIn なし、afternoonIn あり）にも対応
+  const startTime = record?.morningIn || record?.afternoonIn;
+  if (!record || !startTime) return 0;
   
-  const inT = timeToMinutes(record.morningIn);
+  const inT = timeToMinutes(startTime);
   const outT = timeToMinutes(record.afternoonOut || record.morningOut || record.afternoonIn);
   
   if (!outT || outT <= inT) return 0;

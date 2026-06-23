@@ -131,7 +131,9 @@ function EmployeeApp() {
       return;
     }
 
-    const type = pendingPunchType;
+    // 12時以降の最初の打刻は afternoonIn に振り分ける
+    const actualType = getNextPunchType(record);
+    const type = actualType !== 'done' ? actualType : pendingPunchType;
     const label = getPunchLabel(type);
     const message = getPunchMessage(type);
 

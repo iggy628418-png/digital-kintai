@@ -7,7 +7,8 @@ import {
   todayDateString, 
   minutesToDisplay,
   calcDailyMinutes,
-  getPunchTheme
+  getPunchTheme,
+  currentHour,
 } from '../utils/timeLogic';
 
 export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, onViewHistory }) {
@@ -128,10 +129,10 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>
                   <Clock size={16} /> 勤務の記録
                 </div>
-                {!todayRecord?.morningIn ? (
+                {!todayRecord?.morningIn && !todayRecord?.afternoonIn ? (
                   <button 
                     className="btn" 
-                    onClick={() => onPunch('morningIn')}
+                    onClick={() => onPunch(currentHour() < 12 ? 'morningIn' : 'afternoonIn')}
                     style={{ 
                       width: '100%',
                       padding: '1.25rem', 
@@ -141,7 +142,7 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                       boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)'
                     }}
                   >
-                    出勤を打刻する
+                    {currentHour() < 12 ? '出勤を打刻する' : '午後出勤を打刻する'}
                   </button>
                 ) : (
                   <button 
@@ -177,14 +178,14 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                   <button 
                     className="btn" 
                     onClick={() => onPunch('morningOut')}
-                    disabled={!todayRecord?.morningIn || !!todayRecord?.morningOut || !!todayRecord?.afternoonOut}
+                    disabled={(!todayRecord?.morningIn && !todayRecord?.afternoonIn) || !!todayRecord?.morningOut || !!todayRecord?.afternoonOut}
                     style={{ 
                       padding: '1rem', 
                       fontSize: '1rem', 
-                      background: (!todayRecord?.morningIn || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '#f8fafc' : getPunchTheme('morningOut').bgColor,
-                      color: (!todayRecord?.morningIn || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '#cbd5e1' : 'white',
-                      border: (!todayRecord?.morningIn || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '1px solid #e2e8f0' : 'none',
-                      opacity: (!todayRecord?.morningIn || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? 0.5 : 1
+                      background: ((!todayRecord?.morningIn && !todayRecord?.afternoonIn) || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '#f8fafc' : getPunchTheme('morningOut').bgColor,
+                      color: ((!todayRecord?.morningIn && !todayRecord?.afternoonIn) || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '#cbd5e1' : 'white',
+                      border: ((!todayRecord?.morningIn && !todayRecord?.afternoonIn) || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '1px solid #e2e8f0' : 'none',
+                      opacity: ((!todayRecord?.morningIn && !todayRecord?.afternoonIn) || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? 0.5 : 1
                     }}
                   >
                     休憩入り
@@ -205,7 +206,7 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                     休憩戻り
                   </button>
                 </div>
-                {!todayRecord?.morningIn && (
+                {!todayRecord?.morningIn && !todayRecord?.afternoonIn && (
                   <p style={{ fontSize: '0.7rem', color: '#fb7185', marginTop: '0.75rem', textAlign: 'center' }}>
                     ※出勤打刻をすると休憩ボタンが有効になります
                   </p>
