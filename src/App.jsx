@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   getCurrentUser,
   clearCurrentUser,
@@ -12,8 +12,6 @@ import {
   nowTimeString, 
   currentYearMonth,
   calcMonthlyMinutes,
-  getNextPunchType,
-  getDisplayPunchType,
   getPunchLabel,
   getPunchMessage
 } from './utils/timeLogic';
@@ -55,6 +53,7 @@ function EmployeeApp() {
   const [loading, setLoading] = useState(true);
   const [punchResult, setPunchResult] = useState(null);
   const [pendingPunchType, setPendingPunchType] = useState(null);
+  const pendingPunchTypeRef = useRef(null);
   const [showScanner, setShowScanner] = useState(false);
   
   const [todayRecord, setTodayRecord] = useState(null);
@@ -103,6 +102,7 @@ function EmployeeApp() {
   // 打刻種別を選択してスキャナーを表示
   const handlePunch = (type) => {
     setPendingPunchType(type);
+    pendingPunchTypeRef.current = type;
     setShowScanner(true);
   };
 
@@ -110,7 +110,8 @@ function EmployeeApp() {
   const handleScan = async (decodedText) => {
     setShowScanner(false);
     
-    if (!pendingPunchType) return;
+    const punchType = pendingPunchTypeRef.current;
+    if (!punchType) return;
 
     const today = todayDateString();
     const record = (await getRecordByDate(user.id, today)) || { 
@@ -131,9 +132,8 @@ function EmployeeApp() {
       return;
     }
 
-    // 12時以降の最初の打刻は afternoonIn に振り分ける
-    const actualType = getNextPunchType(record);
-    const type = actualType !== 'done' ? actualType : pendingPunchType;
+    // Dashboardから指定された打刻タイプをそのまま使用する
+    const type = punchType;
     const label = getPunchLabel(type);
     const message = getPunchMessage(type);
 
@@ -143,6 +143,7 @@ function EmployeeApp() {
     setPunchResult({ type, label, message, time: nowTimeString() });
     
     setPendingPunchType(null);
+    pendingPunchTypeRef.current = null;
     // データを再読み込み
     await loadData(user.id);
   };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { X, Camera, RefreshCw, KeyRound } from 'lucide-react';
 
@@ -10,6 +10,8 @@ export default function Scanner({ onScan, onClose }) {
   const [manualMode, setManualMode] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [isInitializing, setIsInitializing] = useState(true);
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
 
   useEffect(() => {
     const html5QrCode = new Html5Qrcode("reader");
@@ -50,7 +52,7 @@ export default function Scanner({ onScan, onClose }) {
       },
       (decodedText) => {
         scannerInstance.stop().then(() => {
-          onScan(decodedText);
+          onScanRef.current(decodedText);
         });
       },
       (errorMessage) => {
