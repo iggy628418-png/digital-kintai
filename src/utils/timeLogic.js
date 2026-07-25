@@ -10,44 +10,40 @@ export function currentHour() {
   return new Date().getHours();
 }
 
-// 現在の打刻状態を判定（午後のみ打刻にも対応）
+// 現在の打刻状態を判定
 export function getNextPunchType(record) {
-  const hour = currentHour();
-  
   if (!record) {
-    return hour < 12 ? 'morningIn' : 'afternoonIn';
+    return 'morningIn';
   }
 
-  // 1. 午前出勤中なら、次は必ず午前退勤
-  if (record.morningIn && !record.morningOut) return 'morningOut';
+  // 1. 出勤中（休憩入り前）
+  if (record.morningIn && !record.morningOut && !record.afternoonIn) return 'morningOut';
 
-  // 2. 午後出勤中なら、次は必ず午後退勤
+  // 2. 休憩中
+  if (record.morningOut && !record.afternoonIn) return 'afternoonIn';
+
+  // 3. 休憩戻り済み〜退勤前
   if (record.afternoonIn && !record.afternoonOut) return 'afternoonOut';
 
-  // 3. 全て完了
+  // 4. 全て完了
   if (record.afternoonOut) return 'done';
 
-  // 4. まだ何もしていない場合（recordはあるが時間は空）
+  // 5. まだ何もしていない場合（recordはあるが時間は空）
   if (!record.morningIn && !record.morningOut && !record.afternoonIn) {
-    return hour < 12 ? 'morningIn' : 'afternoonIn';
+    return 'morningIn';
   }
 
-  // 5. 午前が終わっている or スキップされている場合
-  if (!record.afternoonIn) return 'afternoonIn';
+  // 6. 出勤データがあり退勤未完了の場合
+  if ((record.morningIn || record.afternoonIn) && !record.afternoonOut) {
+    return 'afternoonOut';
+  }
 
   return 'done';
 }
 
-// 時刻を考慮した「表示用」次の打刻タイプ
-// 12時以降で未打刻の場合は午後から始める（スキップ不可、表示ラベルのみ変更）
+// 表示用次の打刻タイプ
 export function getDisplayPunchType(record) {
-  const next = getNextPunchType(record);
-  const hour = currentHour();
-  // 午後12時以降かつ午前打刻が全くない場合は「午後 出勤」表示にする
-  if (next === 'morningIn' && hour >= 12) {
-    return 'afternoonIn';
-  }
-  return next;
+  return getNextPunchType(record);
 }
 
 // 打刻後のメッセージ

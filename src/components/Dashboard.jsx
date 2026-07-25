@@ -132,7 +132,7 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                 {!todayRecord?.morningIn && !todayRecord?.afternoonIn ? (
                   <button 
                     className="btn" 
-                    onClick={() => onPunch(currentHour() < 12 ? 'morningIn' : 'afternoonIn')}
+                    onClick={() => onPunch('morningIn')}
                     style={{ 
                       width: '100%',
                       padding: '1.25rem', 
@@ -142,7 +142,7 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                       boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)'
                     }}
                   >
-                    {currentHour() < 12 ? '出勤を打刻する' : '午後出勤を打刻する'}
+                    出勤を打刻する
                   </button>
                 ) : (
                   <button 
