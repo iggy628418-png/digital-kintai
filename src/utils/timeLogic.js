@@ -17,11 +17,21 @@ export function timeToMinutes(timeStr) {
   return h * 60 + m;
 }
 
-// 午後出勤データの補正 (morningIn が 12:00 以降かつ afternoonIn が空の場合、afternoonIn に移動)
+// 時刻フィールドが "00:00" のみの場合は空として扱うヘルパー
+function sanitizeTime(val) {
+  if (!val || val === '00:00') return '';
+  return val;
+}
+
+// 午後出勤データの補正
 export function normalizeRecord(record) {
   if (!record) return record;
-  let { morningIn, morningOut, afternoonIn, afternoonOut } = record;
+  let morningIn    = sanitizeTime(record.morningIn);
+  let morningOut   = sanitizeTime(record.morningOut);
+  let afternoonIn  = sanitizeTime(record.afternoonIn);
+  let afternoonOut = sanitizeTime(record.afternoonOut);
 
+  // morningIn が 12:00 以降で afternoonIn が空 → afternoonIn に移動
   if (morningIn && timeToMinutes(morningIn) >= 720 && !afternoonIn) {
     afternoonIn = morningIn;
     morningIn = '';
@@ -29,10 +39,10 @@ export function normalizeRecord(record) {
 
   return {
     ...record,
-    morningIn: morningIn || '',
-    morningOut: morningOut || '',
-    afternoonIn: afternoonIn || '',
-    afternoonOut: afternoonOut || '',
+    morningIn,
+    morningOut,
+    afternoonIn,
+    afternoonOut,
   };
 }
 

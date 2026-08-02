@@ -117,12 +117,14 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
   };
 
   const saveEdit = async (record) => {
+    // "00:00" はフォームの空欄デフォルト値のため null 扱いにする
+    const clean = (v) => (!v || v === '00:00') ? null : v;
     const updated = {
       ...record,
-      morningIn:    editValues.morningIn    || null,
-      morningOut:   editValues.morningOut   || null,
-      afternoonIn:  editValues.afternoonIn  || null,
-      afternoonOut: editValues.afternoonOut || null,
+      morningIn:    clean(editValues.morningIn),
+      morningOut:   clean(editValues.morningOut),
+      afternoonIn:  clean(editValues.afternoonIn),
+      afternoonOut: clean(editValues.afternoonOut),
     };
     await upsertRecord(updated);
     setEditingKey(null);
