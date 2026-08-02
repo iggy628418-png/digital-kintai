@@ -2,7 +2,7 @@
  * 勤怠状態管理と時間計算ロジック
  *
  * 状態遷移:
- *   (nothing) → morningIn → morningOut → afternoonIn → afternoonOut
+ *   (nothing) → morningIn / afternoonIn → morningOut → afternoonIn → afternoonOut
  */
 
 // 現在時刻の時間（0〜23）を返す
@@ -10,31 +10,53 @@ export function currentHour() {
   return new Date().getHours();
 }
 
+// HH:MM を分数に変換
+export function timeToMinutes(timeStr) {
+  if (!timeStr) return 0;
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// 午後出勤データの補正 (morningIn が 12:00 以降かつ afternoonIn が空の場合、afternoonIn に移動)
+export function normalizeRecord(record) {
+  if (!record) return record;
+  let { morningIn, morningOut, afternoonIn, afternoonOut } = record;
+
+  if (morningIn && timeToMinutes(morningIn) >= 720 && !afternoonIn) {
+    afternoonIn = morningIn;
+    morningIn = '';
+  }
+
+  return {
+    ...record,
+    morningIn: morningIn || '',
+    morningOut: morningOut || '',
+    afternoonIn: afternoonIn || '',
+    afternoonOut: afternoonOut || '',
+  };
+}
+
 // 現在の打刻状態を判定
 export function getNextPunchType(record) {
-  if (!record) {
-    return 'morningIn';
+  const norm = normalizeRecord(record);
+  if (!norm || (!norm.morningIn && !norm.morningOut && !norm.afternoonIn)) {
+    return currentHour() >= 12 ? 'afternoonIn' : 'morningIn';
   }
 
   // 1. 出勤中（休憩入り前）
-  if (record.morningIn && !record.morningOut && !record.afternoonIn) return 'morningOut';
+  if (norm.morningIn && !norm.morningOut && !norm.afternoonIn) return 'morningOut';
 
   // 2. 休憩中
-  if (record.morningOut && !record.afternoonIn) return 'afternoonIn';
+  if (norm.morningOut && !norm.afternoonIn) return 'afternoonIn';
 
   // 3. 休憩戻り済み〜退勤前
-  if (record.afternoonIn && !record.afternoonOut) return 'afternoonOut';
+  if (norm.afternoonIn && !norm.afternoonOut) return 'afternoonOut';
 
   // 4. 全て完了
-  if (record.afternoonOut) return 'done';
+  if (norm.afternoonOut) return 'done';
 
-  // 5. まだ何もしていない場合（recordはあるが時間は空）
-  if (!record.morningIn && !record.morningOut && !record.afternoonIn) {
-    return 'morningIn';
-  }
-
-  // 6. 出勤データがあり退勤未完了の場合
-  if ((record.morningIn || record.afternoonIn) && !record.afternoonOut) {
+  // 5. 出勤データがあり退勤未完了の場合
+  if ((norm.morningIn || norm.afternoonIn) && !norm.afternoonOut) {
     return 'afternoonOut';
   }
 
@@ -62,7 +84,7 @@ export function getPunchLabel(type) {
   const labels = {
     morningIn: '出勤',
     morningOut: '休憩入り',
-    afternoonIn: '休憩戻り',
+    afternoonIn: '午後出勤 / 休憩戻り',
     afternoonOut: '退勤',
     done: '打刻完了',
   };
@@ -90,18 +112,11 @@ export function getPunchTheme(type) {
 
 // 現在の状態のラベル
 export function getCurrentStatusLabel(record) {
-  // 午後のみ出勤（morningIn なし、afternoonIn あり）にも対応
-  if (!record || (!record.morningIn && !record.afternoonIn)) return '未出勤';
-  if (record.afternoonOut) return '退勤済み';
-  if (record.morningOut && !record.afternoonIn) return '休憩中';
+  const norm = normalizeRecord(record);
+  if (!norm || (!norm.morningIn && !norm.afternoonIn)) return '未出勤';
+  if (norm.afternoonOut) return '退勤済み';
+  if (norm.morningOut && !norm.afternoonIn) return '休憩中';
   return '勤務中';
-}
-
-// HH:MM を分数に変換
-export function timeToMinutes(timeStr) {
-  if (!timeStr) return 0;
-  const [h, m] = timeStr.split(':').map(Number);
-  return h * 60 + m;
 }
 
 // 分数を "○時間○分" に変換
@@ -116,21 +131,21 @@ export function minutesToDisplay(totalMinutes) {
 
 // 1日の勤務時間を分単位で計算 (休憩を考慮)
 export function calcDailyMinutes(record) {
-  // 午後のみ出勤（morningIn なし、afternoonIn あり）にも対応
-  const startTime = record?.morningIn || record?.afternoonIn;
-  if (!record || !startTime) return 0;
+  const norm = normalizeRecord(record);
+  const startTime = norm?.morningIn || norm?.afternoonIn;
+  if (!norm || !startTime) return 0;
   
   const inT = timeToMinutes(startTime);
-  const outT = timeToMinutes(record.afternoonOut || record.morningOut || record.afternoonIn);
+  const outT = timeToMinutes(norm.afternoonOut || norm.morningOut || norm.afternoonIn);
   
   if (!outT || outT <= inT) return 0;
 
   let total = outT - inT;
   
   // 休憩時間を引く (morningOut 〜 afternoonIn の間)
-  if (record.morningOut && record.afternoonIn) {
-    const bStart = timeToMinutes(record.morningOut);
-    const bEnd = timeToMinutes(record.afternoonIn);
+  if (norm.morningOut && norm.afternoonIn && norm.morningIn) {
+    const bStart = timeToMinutes(norm.morningOut);
+    const bEnd = timeToMinutes(norm.afternoonIn);
     const bDiff = bEnd - bStart;
     if (bDiff > 0) {
       total -= bDiff;
@@ -142,16 +157,16 @@ export function calcDailyMinutes(record) {
 
 // 休憩時間を分単位で計算 (morningOut 〜 afternoonIn)
 export function calcBreakMinutes(record) {
-  if (!record || !record.morningOut || !record.afternoonIn) return 0;
-  const bStart = timeToMinutes(record.morningOut);
-  const bEnd = timeToMinutes(record.afternoonIn);
+  const norm = normalizeRecord(record);
+  if (!norm || !norm.morningOut || !norm.afternoonIn || !norm.morningIn) return 0;
+  const bStart = timeToMinutes(norm.morningOut);
+  const bEnd = timeToMinutes(norm.afternoonIn);
   const diff = bEnd - bStart;
   return diff > 0 ? diff : 0;
 }
 
 // 月間の合計勤務時間を分単位で計算
 export function calcMonthlyMinutes(records, yearMonth) {
-  // yearMonth = 'YYYY-MM'
   return records
     .filter(r => r.date && r.date.startsWith(yearMonth))
     .reduce((sum, r) => sum + calcDailyMinutes(r), 0);
@@ -190,3 +205,4 @@ export function formatDateJP(dateStr) {
   const dt = new Date(Number(y), Number(m) - 1, Number(d));
   return `${Number(m)}月${Number(d)}日 (${dayOfWeek[dt.getDay()]})`;
 }
+

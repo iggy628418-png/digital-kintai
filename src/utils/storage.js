@@ -1,4 +1,5 @@
 import { db } from './firebase';
+import { normalizeRecord } from './timeLogic';
 import { 
   collection, 
   doc, 
@@ -91,8 +92,8 @@ export async function getRecords() {
     getDocs(collection(db, COLLECTIONS.RECORDS)),
     getDocs(collection(db, COLLECTIONS.APPROVED_RECORDS))
   ]);
-  const r1 = q1.docs.map(doc => doc.data());
-  const r2 = q2.docs.map(doc => doc.data());
+  const r1 = q1.docs.map(doc => normalizeRecord(doc.data()));
+  const r2 = q2.docs.map(doc => normalizeRecord(doc.data()));
   return [...r1, ...r2];
 }
 
@@ -101,8 +102,8 @@ export async function getRecordsByEmployee(employeeId) {
     getDocs(query(collection(db, COLLECTIONS.RECORDS), where("employeeId", "==", employeeId))),
     getDocs(query(collection(db, COLLECTIONS.APPROVED_RECORDS), where("employeeId", "==", employeeId)))
   ]);
-  const r1 = q1.docs.map(doc => doc.data());
-  const r2 = q2.docs.map(doc => doc.data());
+  const r1 = q1.docs.map(doc => normalizeRecord(doc.data()));
+  const r2 = q2.docs.map(doc => normalizeRecord(doc.data()));
   return [...r1, ...r2];
 }
 
@@ -113,16 +114,17 @@ export async function getRecordByDate(employeeId, date) {
     getDoc(doc(db, COLLECTIONS.RECORDS, docId)),
     getDoc(doc(db, COLLECTIONS.APPROVED_RECORDS, docId))
   ]);
-  if (s1.exists()) return s1.data();
-  if (s2.exists()) return s2.data();
+  if (s1.exists()) return normalizeRecord(s1.data());
+  if (s2.exists()) return normalizeRecord(s2.data());
   return null;
 }
 
 export async function upsertRecord(record) {
-  const docId = `${record.employeeId}_${record.date}`;
-  const collectionName = record.approved ? COLLECTIONS.APPROVED_RECORDS : COLLECTIONS.RECORDS;
+  const norm = normalizeRecord(record);
+  const docId = `${norm.employeeId}_${norm.date}`;
+  const collectionName = norm.approved ? COLLECTIONS.APPROVED_RECORDS : COLLECTIONS.RECORDS;
   const docRef = doc(db, collectionName, docId);
-  await setDoc(docRef, record, { merge: true });
+  await setDoc(docRef, norm, { merge: true });
 }
 
 export async function approveRecord(employeeId, date) {

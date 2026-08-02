@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode, Trash2, PlusCircle } from 'lucide-react';
 import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord, deleteRecord, deleteEmployee } from '../utils/storage';
-import { formatDateJP, calcDailyMinutes, calcBreakMinutes, minutesToDisplay } from '../utils/timeLogic';
+import { formatDateJP, calcDailyMinutes, calcBreakMinutes, minutesToDisplay, normalizeRecord } from '../utils/timeLogic';
 
 const TIME_FIELDS = [
-  { key: 'morningIn',    label: '出勤' },
-  { key: 'morningOut',   label: '休憩入り' },
-  { key: 'afternoonIn',  label: '休憩戻り' },
-  { key: 'afternoonOut', label: '退勤' },
+  { key: 'morningIn',    label: '午前 開始' },
+  { key: 'morningOut',   label: '午前 終了' },
+  { key: 'afternoonIn',  label: '午後 開始' },
+  { key: 'afternoonOut', label: '午後 終了' },
 ];
 
 export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
@@ -101,12 +101,13 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
   };
 
   const startEdit = (record) => {
+    const norm = normalizeRecord(record);
     setEditingKey(`${record.employeeId}-${record.date}`);
     setEditValues({
-      morningIn:    record.morningIn    || '',
-      morningOut:   record.morningOut   || '',
-      afternoonIn:  record.afternoonIn  || '',
-      afternoonOut: record.afternoonOut || '',
+      morningIn:    norm.morningIn    || '',
+      morningOut:   norm.morningOut   || '',
+      afternoonIn:  norm.afternoonIn  || '',
+      afternoonOut: norm.afternoonOut || '',
     });
   };
 
@@ -317,6 +318,7 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
             const emp = employees.find(e => e.id === record.employeeId);
             const key = `${record.employeeId}-${record.date}`;
             const isEditing = editingKey === key;
+            const normRecord = normalizeRecord(record);
 
             return (
               <div key={key} className="card" style={{ padding: '1rem', marginBottom: '1rem' }}>
@@ -324,11 +326,11 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <div>
                     <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{emp?.name || '不明'}</span>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{formatDateJP(record.date)}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{formatDateJP(normRecord.date)}</p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div className={`badge ${record.approved ? 'badge-success' : 'badge-pending'}`}>
-                      {record.approved ? '承認済み' : '未承認'}
+                    <div className={`badge ${normRecord.approved ? 'badge-success' : 'badge-pending'}`}>
+                      {normRecord.approved ? '承認済み' : '未承認'}
                     </div>
                     {!isEditing && (
                       <button
@@ -342,7 +344,7 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
                     )}
                     {!isEditing && (
                       <button
-                        onClick={() => handleReset(record.employeeId, record.date)}
+                        onClick={() => handleReset(normRecord.employeeId, normRecord.date)}
                         title="記録をリセット"
                         style={{ background: 'none', border: '1px solid #fee2e2', borderRadius: '0.5rem', padding: '0.3rem 0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: '#ef4444' }}
                       >
@@ -388,22 +390,22 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.8rem', marginBottom: '1rem' }}>
                     <div style={{ padding: '0.6rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                      <p style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>出勤・退勤：{record.morningIn || '--:--'} 〜 {record.afternoonOut || '--:--'}</p>
-                      <p style={{ color: '#db2777' }}>休憩時間：{record.morningOut || '--:--'} 〜 {record.afternoonIn || '--:--'} ({minutesToDisplay(calcBreakMinutes(record))})</p>
+                      <p style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>午前：{normRecord.morningIn || '--:--'} 〜 {normRecord.morningOut || '--:--'}</p>
+                      <p style={{ color: 'var(--text-muted)' }}>午後：{normRecord.afternoonIn || '--:--'} 〜 {normRecord.afternoonOut || '--:--'}</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#eff6ff', borderRadius: '0.5rem', border: '1px solid #dbeafe' }}>
                       <span style={{ fontSize: '0.65rem', color: 'var(--primary)' }}>実労働時間</span>
-                      <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.1rem' }}>{minutesToDisplay(calcDailyMinutes(record))}</span>
+                      <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.1rem' }}>{minutesToDisplay(calcDailyMinutes(normRecord))}</span>
                     </div>
                   </div>
                 )}
 
                 {/* 承認ボタン */}
-                {!record.approved ? (
+                {!normRecord.approved ? (
                   <button
                     className="btn btn-primary"
                     style={{ background: 'var(--secondary)', fontSize: '0.875rem' }}
-                    onClick={() => handleApprove(record.employeeId, record.date)}
+                    onClick={() => handleApprove(normRecord.employeeId, normRecord.date)}
                   >
                     <CheckCircle size={18} />
                     この日の記録を承認する
@@ -412,7 +414,7 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
                   <button
                     className="btn btn-outline"
                     style={{ color: '#ef4444', fontSize: '0.875rem', borderColor: '#fee2e2' }}
-                    onClick={() => handleUnapprove(record.employeeId, record.date)}
+                    onClick={() => handleUnapprove(normRecord.employeeId, normRecord.date)}
                   >
                     <XCircle size={18} />
                     承認を取り消す

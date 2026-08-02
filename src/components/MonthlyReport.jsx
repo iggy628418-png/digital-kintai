@@ -7,6 +7,7 @@ import {
   calcBreakMinutes,
   minutesToDisplay,
   formatDateJP,
+  normalizeRecord,
 } from '../utils/timeLogic';
 
 function getMonthDays(yearMonth) {
@@ -29,16 +30,17 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }));
 
+  const loadData = async () => {
+    const emps = await getEmployees();
+    const recs = await getRecords();
+    setEmployees(emps);
+    setRecords(recs);
+    if (emps.length > 0 && !selectedEmpId) {
+      setSelectedEmpId(emps[0].id);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      const emps = await getEmployees();
-      const recs = await getRecords();
-      setEmployees(emps);
-      setRecords(recs);
-      if (emps.length > 0 && !selectedEmpId) {
-        setSelectedEmpId(emps[0].id);
-      }
-    };
     loadData();
   }, []);
 
@@ -49,7 +51,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
   const summaries = employees.map(emp => {
     const empRecords = monthRecords.filter(r => r.employeeId === emp.id);
     const dailyData = days.map(date => {
-      const rec = empRecords.find(r => r.date === date);
+      const rawRec = empRecords.find(r => r.date === date);
+      const rec = normalizeRecord(rawRec);
       return {
         date,
         morningIn:    rec?.morningIn    || '',

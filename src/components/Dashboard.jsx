@@ -9,6 +9,7 @@ import {
   calcDailyMinutes,
   getPunchTheme,
   currentHour,
+  normalizeRecord,
 } from '../utils/timeLogic';
 
 export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, onViewHistory }) {
@@ -18,6 +19,8 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const normRecord = normalizeRecord(todayRecord);
 
   return (
     <div className="app-container page-transition">
@@ -37,15 +40,15 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{user.name} さん</h2>
             </div>
             <div 
-              className={`badge ${todayRecord?.approved ? 'badge-success' : 'badge-pending'}`} 
+              className={`badge ${normRecord?.approved ? 'badge-success' : 'badge-pending'}`} 
               style={{ 
                 padding: '0.4rem 0.8rem',
                 borderRadius: '2rem',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                background: todayRecord?.approved ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.1)',
-                color: todayRecord?.approved ? '#34d399' : '#f87171',
-                border: `1px solid ${todayRecord?.approved ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.2)'}`,
+                background: normRecord?.approved ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.1)',
+                color: normRecord?.approved ? '#34d399' : '#f87171',
+                border: `1px solid ${normRecord?.approved ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.2)'}`,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.25rem'
@@ -56,11 +59,11 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                   width: '6px', 
                   height: '6px', 
                   borderRadius: '50%', 
-                  background: todayRecord?.approved ? '#10b981' : '#ef4444',
-                  boxShadow: `0 0 8px ${todayRecord?.approved ? '#10b981' : '#ef4444'}`
+                  background: normRecord?.approved ? '#10b981' : '#ef4444',
+                  boxShadow: `0 0 8px ${normRecord?.approved ? '#10b981' : '#ef4444'}`
                 }} 
               />
-              {todayRecord?.approved ? '確定済み' : '未確定'}
+              {normRecord?.approved ? '確定済み' : '未確定'}
             </div>
           </div>
 
@@ -76,7 +79,7 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
           <div className="stats-grid">
             <div className="stat-item" style={{ background: 'rgba(255,255,255,0.1)' }}>
               <span className="stat-label" style={{ color: 'rgba(255,255,255,0.6)' }}>今日の勤務</span>
-              <span className="stat-value" style={{ color: 'white' }}>{minutesToDisplay(calcDailyMinutes(todayRecord))}</span>
+              <span className="stat-value" style={{ color: 'white' }}>{minutesToDisplay(calcDailyMinutes(normRecord))}</span>
             </div>
             <div className="stat-item" style={{ background: 'rgba(255,255,255,0.1)' }}>
               <span className="stat-label" style={{ color: 'rgba(255,255,255,0.6)' }}>今月の合計</span>
@@ -95,29 +98,29 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem', marginBottom: '1rem' }}>
               {[
-                { label: '出勤', key: 'morningIn' },
-                { label: '休憩入', key: 'morningOut' },
-                { label: '休憩終', key: 'afternoonIn' },
-                { label: '退勤', key: 'afternoonOut' }
+                { label: '午前 開始', key: 'morningIn' },
+                { label: '午前 終了', key: 'morningOut' },
+                { label: '午後 開始', key: 'afternoonIn' },
+                { label: '午後 終了', key: 'afternoonOut' }
               ].map((item) => (
                 <div key={item.key} style={{ 
                   textAlign: 'center', 
                   padding: '0.5rem 0.2rem', 
                   borderRadius: '0.5rem',
-                  background: todayRecord?.[item.key] ? '#f1f5f9' : '#ffffff',
-                  border: todayRecord?.[item.key] ? '1px solid #e2e8f0' : '1px dashed #cbd5e1',
-                  opacity: todayRecord?.[item.key] ? 1 : 0.5
+                  background: normRecord?.[item.key] ? '#f1f5f9' : '#ffffff',
+                  border: normRecord?.[item.key] ? '1px solid #e2e8f0' : '1px dashed #cbd5e1',
+                  opacity: normRecord?.[item.key] ? 1 : 0.5
                 }}>
                   <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>{item.label}</p>
-                  <p style={{ fontSize: '0.75rem', fontWeight: 800, color: todayRecord?.[item.key] ? 'var(--text-main)' : '#94a3b8' }}>
-                    {todayRecord?.[item.key] || '--:--'}
+                  <p style={{ fontSize: '0.75rem', fontWeight: 800, color: normRecord?.[item.key] ? 'var(--text-main)' : '#94a3b8' }}>
+                    {normRecord?.[item.key] || '--:--'}
                   </p>
                 </div>
               ))}
             </div>
           </div>
 
-          {!todayRecord?.approved ? (
+          {!normRecord?.approved ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {/* 出勤・退勤セクション */}
               <div style={{ 
@@ -129,10 +132,13 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>
                   <Clock size={16} /> 勤務の記録
                 </div>
-                {!todayRecord?.morningIn && !todayRecord?.afternoonIn ? (
+                {!normRecord?.morningIn && !normRecord?.afternoonIn ? (
                   <button 
                     className="btn" 
-                    onClick={() => onPunch('morningIn')}
+                    onClick={() => {
+                      const punchType = currentHour() >= 12 ? 'afternoonIn' : 'morningIn';
+                      onPunch(punchType);
+                    }}
                     style={{ 
                       width: '100%',
                       padding: '1.25rem', 
@@ -148,15 +154,15 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                   <button 
                     className="btn" 
                     onClick={() => onPunch('afternoonOut')}
-                    disabled={!!todayRecord?.afternoonOut}
+                    disabled={!!normRecord?.afternoonOut}
                     style={{ 
                       width: '100%',
                       padding: '1.25rem', 
                       fontSize: '1.2rem', 
-                      background: todayRecord?.afternoonOut ? '#f1f5f9' : getPunchTheme('afternoonOut').bgColor,
-                      color: todayRecord?.afternoonOut ? '#94a3b8' : 'white',
-                      border: todayRecord?.afternoonOut ? '1px solid #e2e8f0' : 'none',
-                      opacity: todayRecord?.afternoonOut ? 0.6 : 1
+                      background: normRecord?.afternoonOut ? '#f1f5f9' : getPunchTheme('afternoonOut').bgColor,
+                      color: normRecord?.afternoonOut ? '#94a3b8' : 'white',
+                      border: normRecord?.afternoonOut ? '1px solid #e2e8f0' : 'none',
+                      opacity: normRecord?.afternoonOut ? 0.6 : 1
                     }}
                   >
                     <LogOut size={20} /> 退勤を打刻する
@@ -178,14 +184,14 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                   <button 
                     className="btn" 
                     onClick={() => onPunch('morningOut')}
-                    disabled={(!todayRecord?.morningIn && !todayRecord?.afternoonIn) || !!todayRecord?.morningOut || !!todayRecord?.afternoonOut}
+                    disabled={(!normRecord?.morningIn && !normRecord?.afternoonIn) || !!normRecord?.morningOut || !!normRecord?.afternoonOut}
                     style={{ 
                       padding: '1rem', 
                       fontSize: '1rem', 
-                      background: ((!todayRecord?.morningIn && !todayRecord?.afternoonIn) || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '#f8fafc' : getPunchTheme('morningOut').bgColor,
-                      color: ((!todayRecord?.morningIn && !todayRecord?.afternoonIn) || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '#cbd5e1' : 'white',
-                      border: ((!todayRecord?.morningIn && !todayRecord?.afternoonIn) || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? '1px solid #e2e8f0' : 'none',
-                      opacity: ((!todayRecord?.morningIn && !todayRecord?.afternoonIn) || todayRecord?.morningOut || !!todayRecord?.afternoonOut) ? 0.5 : 1
+                      background: ((!normRecord?.morningIn && !normRecord?.afternoonIn) || normRecord?.morningOut || !!normRecord?.afternoonOut) ? '#f8fafc' : getPunchTheme('morningOut').bgColor,
+                      color: ((!normRecord?.morningIn && !normRecord?.afternoonIn) || normRecord?.morningOut || !!normRecord?.afternoonOut) ? '#cbd5e1' : 'white',
+                      border: ((!normRecord?.morningIn && !normRecord?.afternoonIn) || normRecord?.morningOut || !!normRecord?.afternoonOut) ? '1px solid #e2e8f0' : 'none',
+                      opacity: ((!normRecord?.morningIn && !normRecord?.afternoonIn) || normRecord?.morningOut || !!normRecord?.afternoonOut) ? 0.5 : 1
                     }}
                   >
                     休憩入り
@@ -193,20 +199,20 @@ export default function Dashboard({ user, todayRecord, monthlyMinutes, onPunch, 
                   <button 
                     className="btn" 
                     onClick={() => onPunch('afternoonIn')}
-                    disabled={!todayRecord?.morningOut || !!todayRecord?.afternoonIn || !!todayRecord?.afternoonOut}
+                    disabled={!normRecord?.morningOut || !!normRecord?.afternoonIn || !!normRecord?.afternoonOut}
                     style={{ 
                       padding: '1rem', 
                       fontSize: '1rem', 
-                      background: (!todayRecord?.morningOut || todayRecord?.afternoonIn || !!todayRecord?.afternoonOut) ? '#f8fafc' : getPunchTheme('afternoonIn').bgColor,
-                      color: (!todayRecord?.morningOut || todayRecord?.afternoonIn || !!todayRecord?.afternoonOut) ? '#cbd5e1' : 'white',
-                      border: (!todayRecord?.morningOut || todayRecord?.afternoonIn || !!todayRecord?.afternoonOut) ? '1px solid #e2e8f0' : 'none',
-                      opacity: (!todayRecord?.morningOut || todayRecord?.afternoonIn || !!todayRecord?.afternoonOut) ? 0.5 : 1
+                      background: (!normRecord?.morningOut || normRecord?.afternoonIn || !!normRecord?.afternoonOut) ? '#f8fafc' : getPunchTheme('afternoonIn').bgColor,
+                      color: (!normRecord?.morningOut || normRecord?.afternoonIn || !!normRecord?.afternoonOut) ? '#cbd5e1' : 'white',
+                      border: (!normRecord?.morningOut || normRecord?.afternoonIn || !!normRecord?.afternoonOut) ? '1px solid #e2e8f0' : 'none',
+                      opacity: (!normRecord?.morningOut || normRecord?.afternoonIn || !!normRecord?.afternoonOut) ? 0.5 : 1
                     }}
                   >
                     休憩戻り
                   </button>
                 </div>
-                {!todayRecord?.morningIn && !todayRecord?.afternoonIn && (
+                {!normRecord?.morningIn && !normRecord?.afternoonIn && (
                   <p style={{ fontSize: '0.7rem', color: '#fb7185', marginTop: '0.75rem', textAlign: 'center' }}>
                     ※出勤打刻をすると休憩ボタンが有効になります
                   </p>

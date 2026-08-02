@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, CheckCircle, Clock, Calendar } from 'lucide-react';
 import { getRecordsByEmployee } from '../utils/storage';
-import { formatDateJP, calcDailyMinutes, minutesToDisplay } from '../utils/timeLogic';
+import { formatDateJP, calcDailyMinutes, minutesToDisplay, normalizeRecord } from '../utils/timeLogic';
 
 export default function AttendanceHistory({ user, onBack }) {
   const [records, setRecords] = React.useState([]);
@@ -31,34 +31,37 @@ export default function AttendanceHistory({ user, onBack }) {
             <p>まだ勤務記録がありません</p>
           </div>
         ) : (
-          records.map(record => (
-            <div key={record.date} className="card" style={{ padding: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span className="history-date">{formatDateJP(record.date)}</span>
-                <span className={`badge ${record.approved ? 'badge-success' : 'badge-pending'}`}>
-                  {record.approved ? '承認済み' : '未承認'}
-                </span>
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.875rem' }}>
-                <div style={{ padding: '0.5rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>午前</p>
-                  <p>{record.morningIn || '--:--'} 〜 {record.morningOut || '--:--'}</p>
+          records.map(record => {
+            const normRecord = normalizeRecord(record);
+            return (
+              <div key={record.date} className="card" style={{ padding: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span className="history-date">{formatDateJP(normRecord.date)}</span>
+                  <span className={`badge ${normRecord.approved ? 'badge-success' : 'badge-pending'}`}>
+                    {normRecord.approved ? '承認済み' : '未承認'}
+                  </span>
                 </div>
-                <div style={{ padding: '0.5rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>午後</p>
-                  <p>{record.afternoonIn || '--:--'} 〜 {record.afternoonOut || '--:--'}</p>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.875rem' }}>
+                  <div style={{ padding: '0.5rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>午前</p>
+                    <p>{normRecord.morningIn || '--:--'} 〜 {normRecord.morningOut || '--:--'}</p>
+                  </div>
+                  <div style={{ padding: '0.5rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>午後</p>
+                    <p>{normRecord.afternoonIn || '--:--'} 〜 {normRecord.afternoonOut || '--:--'}</p>
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem' }}>
-                <Clock size={14} color="var(--primary)" />
-                <span style={{ fontWeight: 800, color: 'var(--primary)' }}>
-                  合計：{minutesToDisplay(calcDailyMinutes(record))}
-                </span>
+                <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem' }}>
+                  <Clock size={14} color="var(--primary)" />
+                  <span style={{ fontWeight: 800, color: 'var(--primary)' }}>
+                    合計：{minutesToDisplay(calcDailyMinutes(normRecord))}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </main>
     </div>
