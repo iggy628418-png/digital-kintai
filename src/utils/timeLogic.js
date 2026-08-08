@@ -216,3 +216,11 @@ export function formatDateJP(dateStr) {
   return `${Number(m)}月${Number(d)}日 (${dayOfWeek[dt.getDay()]})`;
 }
 
+// 労働時間（分）と時給から給与額（円）を計算（1円未満切り捨て）
+export function calcWage(totalMinutes, hourlyWage) {
+  const wage = Number(hourlyWage) || 0;
+  if (totalMinutes <= 0 || wage <= 0) return 0;
+  return Math.floor((totalMinutes / 60) * wage);
+}
+
+

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode, Trash2, PlusCircle } from 'lucide-react';
-import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord, deleteRecord, deleteEmployee } from '../utils/storage';
-import { formatDateJP, calcDailyMinutes, calcBreakMinutes, minutesToDisplay, normalizeRecord } from '../utils/timeLogic';
+import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode, Trash2, PlusCircle, Coins } from 'lucide-react';
+import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord, deleteRecord, deleteEmployee, updateEmployee } from '../utils/storage';
+import { formatDateJP, calcDailyMinutes, calcBreakMinutes, minutesToDisplay, normalizeRecord, calcWage } from '../utils/timeLogic';
 
 const TIME_FIELDS = [
   { key: 'morningIn',    label: '午前 開始' },
@@ -20,6 +20,10 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
   // 編集中のレコードキー: "employeeId-date" or null
   const [editingKey, setEditingKey] = useState(null);
   const [editValues, setEditValues] = useState({});
+
+  // 時給編集用の状態
+  const [editingWageEmpId, setEditingWageEmpId] = useState(null);
+  const [wageInputValue, setWageInputValue] = useState('');
 
   // 新規追加フォームの状態
   const [showAddForm, setShowAddForm] = useState(false);
@@ -98,6 +102,18 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
         }
       }
     }
+  };
+
+  const handleSaveWage = async (employeeId) => {
+    const val = Number(wageInputValue);
+    if (isNaN(val) || val < 0) {
+      alert('正しい時給（0以上の数値）を入力してください。');
+      return;
+    }
+    await updateEmployee(employeeId, { hourlyWage: val });
+    setEditingWageEmpId(null);
+    setWageInputValue('');
+    await reload();
   };
 
   const startEdit = (record) => {
@@ -259,7 +275,7 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
         <details className="card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
           <summary style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
             <Users size={18} color="var(--primary)" />
-            <span>登録従業員の管理（解除など）</span>
+            <span>登録従業員の管理（時給設定・解除など）</span>
           </summary>
           <div style={{ display: 'grid', gap: '0.5rem', marginTop: '1rem' }}>
             {employees.length === 0 ? (
@@ -267,13 +283,52 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
             ) : (
               employees.map(emp => (
                 <div key={emp.id} style={{ 
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem',
                   padding: '0.6rem 0.75rem', background: '#fff', borderRadius: '0.6rem', border: '1px solid #eee' 
                 }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{emp.name}</span>
-                  <button onClick={() => handleDeleteEmployee(emp)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                    <Trash2 size={14} /> 解除
-                  </button>
+                  <div>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{emp.name}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
+                      （時給: {emp.hourlyWage ? `¥${Number(emp.hourlyWage).toLocaleString()}` : '未設定'}）
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {editingWageEmpId === emp.id ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <input
+                          type="number"
+                          placeholder="時給(円)"
+                          value={wageInputValue}
+                          onChange={e => setWageInputValue(e.target.value)}
+                          style={{ width: '85px', padding: '0.25rem 0.4rem', borderRadius: '0.4rem', border: '1px solid #ccc', fontSize: '0.8rem' }}
+                        />
+                        <button
+                          onClick={() => handleSaveWage(emp.id)}
+                          style={{ background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '0.4rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer' }}
+                        >
+                          保存
+                        </button>
+                        <button
+                          onClick={() => { setEditingWageEmpId(null); setWageInputValue(''); }}
+                          style={{ background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '0.4rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer' }}
+                        >
+                          X
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setEditingWageEmpId(emp.id); setWageInputValue(emp.hourlyWage || ''); }}
+                        style={{ background: 'none', border: '1px solid #cbd5e1', borderRadius: '0.4rem', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                      >
+                        <Coins size={13} /> 時給設定
+                      </button>
+                    )}
+
+                    <button onClick={() => handleDeleteEmployee(emp)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      <Trash2 size={14} /> 解除
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -395,9 +450,14 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
                       <p style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>午前：{normRecord.morningIn || '--:--'} 〜 {normRecord.morningOut || '--:--'}</p>
                       <p style={{ color: 'var(--text-muted)' }}>午後：{normRecord.afternoonIn || '--:--'} 〜 {normRecord.afternoonOut || '--:--'}</p>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#eff6ff', borderRadius: '0.5rem', border: '1px solid #dbeafe' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#eff6ff', borderRadius: '0.5rem', border: '1px solid #dbeafe', padding: '0.4rem' }}>
                       <span style={{ fontSize: '0.65rem', color: 'var(--primary)' }}>実労働時間</span>
                       <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.1rem' }}>{minutesToDisplay(calcDailyMinutes(normRecord))}</span>
+                      {emp?.hourlyWage > 0 && (
+                        <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 700, marginTop: '0.15rem' }}>
+                          ¥{calcWage(calcDailyMinutes(normRecord), emp.hourlyWage).toLocaleString()}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}

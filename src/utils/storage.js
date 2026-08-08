@@ -46,12 +46,20 @@ export async function getEmployees() {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-export async function addEmployee(name) {
+export async function addEmployee(name, hourlyWage = 0) {
+  const wage = Number(hourlyWage) || 0;
   const docRef = await addDoc(collection(db, COLLECTIONS.EMPLOYEES), {
     name,
+    hourlyWage: wage,
     createdAt: new Date().toISOString(),
   });
-  return { id: docRef.id, name };
+  return { id: docRef.id, name, hourlyWage: wage };
+}
+
+export async function updateEmployee(id, updates) {
+  const docRef = doc(db, COLLECTIONS.EMPLOYEES, id);
+  await updateDoc(docRef, updates);
+  return true;
 }
 
 export async function findEmployeeByName(name) {

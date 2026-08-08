@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, Printer, BarChart2, FileText } from 'lucide-react';
+import { ArrowLeft, Download, Printer, BarChart2, FileText, Coins, Clock } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import { getEmployees, getRecords } from '../utils/storage';
 import {
@@ -8,6 +8,7 @@ import {
   minutesToDisplay,
   formatDateJP,
   normalizeRecord,
+  calcWage,
 } from '../utils/timeLogic';
 
 function getMonthDays(yearMonth) {
@@ -25,6 +26,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
   const [records, setRecords]     = useState([]);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedEmpId, setSelectedEmpId] = useState(null);
+  const [showWageMode, setShowWageMode]   = useState(false);
   const [month, setMonth]         = useState(initialMonth || (() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -53,41 +55,65 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     const dailyData = days.map(date => {
       const rawRec = empRecords.find(r => r.date === date);
       const rec = normalizeRecord(rawRec);
+      const minutes = rec ? calcDailyMinutes(rec) : 0;
+      const breakMinutes = rec ? calcBreakMinutes(rec) : 0;
+      const dailyWage = (rec && emp.hourlyWage) ? calcWage(minutes, emp.hourlyWage) : 0;
       return {
         date,
         morningIn:    rec?.morningIn    || '',
         morningOut:   rec?.morningOut   || '',
         afternoonIn:  rec?.afternoonIn  || '',
         afternoonOut: rec?.afternoonOut || '',
-        minutes: rec ? calcDailyMinutes(rec) : 0,
-        breakMinutes: rec ? calcBreakMinutes(rec) : 0,
+        minutes,
+        breakMinutes,
+        dailyWage,
         approved: rec?.approved || false,
         hasData: !!rec,
       };
     });
     const totalMinutes = dailyData.reduce((s, d) => s + d.minutes, 0);
     const totalBreakMinutes = dailyData.reduce((s, d) => s + d.breakMinutes, 0);
+    const totalWage = dailyData.reduce((s, d) => s + d.dailyWage, 0);
     const workDays = dailyData.filter(d => d.hasData).length;
-    return { emp, dailyData, totalMinutes, totalBreakMinutes, workDays };
+    return { emp, dailyData, totalMinutes, totalBreakMinutes, totalWage, workDays };
   }).filter(s => s.workDays > 0);
 
   // CSV ダウンロード
   const downloadCSV = () => {
-    const header = ['従業員名', '日付', '午前・開始', '午前・終了', '午後・開始', '午後・終了', '休憩時間計', '労働時間計', '承認印'];
+    const header = showWageMode
+      ? ['従業員名', '時給', '日付', '午前・開始', '午前・終了', '午後・開始', '午後・終了', '休憩時間計', '労働時間計', '概算日給', '承認印']
+      : ['従業員名', '日付', '午前・開始', '午前・終了', '午後・開始', '午後・終了', '休憩時間計', '労働時間計', '承認印'];
+
     const rows = [];
     summaries.forEach(({ emp, dailyData }) => {
       dailyData.filter(d => d.hasData).forEach(d => {
-        rows.push([
-          emp.name,
-          d.date,
-          d.morningIn,
-          d.morningOut,
-          d.afternoonIn,
-          d.afternoonOut,
-          minutesToDisplay(d.breakMinutes),
-          minutesToDisplay(d.minutes),
-          d.approved ? '承認済み' : '未承認',
-        ]);
+        if (showWageMode) {
+          rows.push([
+            emp.name,
+            emp.hourlyWage || 0,
+            d.date,
+            d.morningIn,
+            d.morningOut,
+            d.afternoonIn,
+            d.afternoonOut,
+            minutesToDisplay(d.breakMinutes),
+            minutesToDisplay(d.minutes),
+            d.dailyWage,
+            d.approved ? '承認済み' : '未承認',
+          ]);
+        } else {
+          rows.push([
+            emp.name,
+            d.date,
+            d.morningIn,
+            d.morningOut,
+            d.afternoonIn,
+            d.afternoonOut,
+            minutesToDisplay(d.breakMinutes),
+            minutesToDisplay(d.minutes),
+            d.approved ? '承認済み' : '未承認',
+          ]);
+        }
       });
     });
     const csv = [header, ...rows].map(r => r.join(',')).join('\n');
@@ -97,7 +123,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     const a    = document.createElement('a');
     document.body.appendChild(a);
     a.href     = url;
-    a.download = `勤務集計_${month}.csv`;
+    a.download = showWageMode ? `給与計算集計_${month}.csv` : `勤務集計_${month}.csv`;
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
@@ -192,7 +218,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
 
       <main className="no-print" style={{ padding: '1rem' }}>
         {/* 月選択 */}
-        <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <div className="card" style={{ marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
             <BarChart2 size={18} color="var(--primary)" />
             <span style={{ fontWeight: 700 }}>対象月を選択</span>
@@ -205,10 +231,43 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           />
         </div>
 
+        {/* 表示モード切り替え */}
+        <div className="card" style={{ marginBottom: '1.5rem', padding: '0.75rem 1rem' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Coins size={16} /> 表示・出力モードの切り替え（管理者用）
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', background: '#f1f5f9', padding: '0.25rem', borderRadius: '0.6rem' }}>
+            <button
+              onClick={() => setShowWageMode(false)}
+              style={{
+                flex: 1, padding: '0.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem',
+                background: !showWageMode ? 'white' : 'transparent',
+                boxShadow: !showWageMode ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                color: !showWageMode ? 'var(--primary)' : 'var(--text-muted)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem'
+              }}
+            >
+              <Clock size={14} /> 時間のみ表示（勤務表）
+            </button>
+            <button
+              onClick={() => setShowWageMode(true)}
+              style={{
+                flex: 1, padding: '0.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem',
+                background: showWageMode ? 'white' : 'transparent',
+                boxShadow: showWageMode ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                color: showWageMode ? '#059669' : 'var(--text-muted)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem'
+              }}
+            >
+              <Coins size={14} /> 時給計算表示（給与額）
+            </button>
+          </div>
+        </div>
+
         {/* 従業員一覧と個別出力 */}
         <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Download size={18} /> 個別・一括出力
+            <Download size={18} /> 個別・一括出力 ({showWageMode ? '時給計算モード' : '時間表示モード'})
           </h3>
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {summaries.length === 0 ? (
@@ -229,7 +288,14 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                     <div style={{ fontWeight: 700, fontSize: '0.9rem', color: selectedEmpId === s.emp.id ? '#1d4ed8' : 'inherit' }}>
                       {s.emp.name} {selectedEmpId === s.emp.id && ' (閲覧中)'}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>実働: {minutesToDisplay(s.totalMinutes)} / 出勤: {s.workDays}日</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      実働: {minutesToDisplay(s.totalMinutes)} / 出勤: {s.workDays}日
+                      {showWageMode && (
+                        <span style={{ color: '#059669', fontWeight: 700, marginLeft: '0.4rem' }}>
+                          / 想定支給額: ¥{s.totalWage.toLocaleString()} {s.emp.hourlyWage ? `(時給 ¥${Number(s.emp.hourlyWage).toLocaleString()})` : '(時給未設定)'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); handleDownloadSinglePDF(s.emp, s); }} className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: 'white' }}>
                     <FileText size={14} /> PDF
@@ -265,81 +331,96 @@ export default function MonthlyReport({ onBack, initialMonth }) {
 
       {/* 印刷用プレビュー / 実際の印刷内容 */}
       <div className="print-content">
-        {summaries.map(({ emp, dailyData }) => (
-          <div key={emp.id} 
-            className={`print-page ${(!selectedEmpId || selectedEmpId === emp.id) ? 'is-active' : ''}`} 
-            id={`print-page-${emp.id}`}
-          >
-            <div className="print-header">
-              <div className="print-ym">
-                <span className="ym-year">{y}</span>年
-                <span className="ym-month">{Number(m)}</span>月
+        {summaries.map(s => {
+          const { emp, dailyData, totalMinutes, totalBreakMinutes, totalWage, workDays } = s;
+          return (
+            <div key={emp.id} 
+              className={`print-page ${(!selectedEmpId || selectedEmpId === emp.id) ? 'is-active' : ''}`} 
+              id={`print-page-${emp.id}`}
+            >
+              <div className="print-header">
+                <div className="print-ym">
+                  <span className="ym-year">{y}</span>年
+                  <span className="ym-month">{Number(m)}</span>月
+                </div>
+                <h1 className="print-title">{showWageMode ? '勤務計算表 (給与集計)' : '勤務表'}</h1>
+                <div className="print-name-box">
+                  氏名 <span className="print-name">{emp.name}</span>
+                </div>
               </div>
-              <h1 className="print-title">勤務表</h1>
-              <div className="print-name-box">
-                氏名 <span className="print-name">{emp.name}</span>
+
+              <table className="print-table">
+                <thead>
+                  <tr>
+                    <th rowSpan={2} style={{ width: '13%' }}>月/日 (曜日)</th>
+                    <th colSpan={2}>午前</th>
+                    <th colSpan={2}>午後</th>
+                    <th rowSpan={2} style={{ width: showWageMode ? '10%' : '12%' }}>休憩時間計</th>
+                    <th rowSpan={2} style={{ width: showWageMode ? '11%' : '12%' }}>労働時間計</th>
+                    {showWageMode && <th rowSpan={2} style={{ width: '12%' }}>概算支給額</th>}
+                    <th rowSpan={2} style={{ width: showWageMode ? '8%' : '10%' }}>承認印</th>
+                  </tr>
+                  <tr>
+                    <th>開始</th>
+                    <th>終了</th>
+                    <th>開始</th>
+                    <th>終了</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dailyData.map(d => {
+                    const dateObj = new Date(d.date);
+                    const days = ['日', '月', '火', '水', '木', '金', '土'];
+                    const dow = days[dateObj.getDay()];
+                    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+
+                    return (
+                      <tr key={d.date} className={isWeekend ? 'weekend-row' : ''}>
+                        <td className="center">
+                          {dateObj.getDate()}日 ({dow})
+                        </td>
+                        <td className="center">{d.morningIn || ''}</td>
+                        <td className="center">{d.morningOut || ''}</td>
+                        <td className="center">{d.afternoonIn || ''}</td>
+                        <td className="center">{d.afternoonOut || ''}</td>
+                        <td className="center">{d.hasData ? minutesToDisplay(d.breakMinutes) : ''}</td>
+                        <td className="center">{d.hasData ? minutesToDisplay(d.minutes) : ''}</td>
+                        {showWageMode && (
+                          <td className="center" style={{ fontWeight: d.dailyWage > 0 ? 'bold' : 'normal' }}>
+                            {d.hasData && d.dailyWage > 0 ? `¥${d.dailyWage.toLocaleString()}` : ''}
+                          </td>
+                        )}
+                        <td className="center">
+                          {d.approved && <div className="stamp-placeholder">承</div>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              <div className="print-footer-group">
+                <div className="print-footer" style={{ flexWrap: 'wrap', gap: '1.2rem' }}>
+                  <div className="footer-item">実働合計: <strong>{minutesToDisplay(totalMinutes)}</strong></div>
+                  <div className="footer-item">休憩合計: <strong>{minutesToDisplay(totalBreakMinutes)}</strong></div>
+                  <div className="footer-item">出勤日数: <strong>{workDays}日</strong></div>
+                  {showWageMode && (
+                    <>
+                      <div className="footer-item">時給: <strong>{emp.hourlyWage ? `¥${Number(emp.hourlyWage).toLocaleString()}` : '未設定'}</strong></div>
+                      <div className="footer-item" style={{ color: '#059669' }}>概算支給合計: <strong>¥{totalWage.toLocaleString()}</strong></div>
+                    </>
+                  )}
+                </div>
+                <div className="print-footer second-footer">
+                  <div className="footer-item">勤務 □</div>
+                  <div className="footer-item">公休 □</div>
+                  <div className="footer-item">休業 □</div>
+                  <div className="footer-item">有給 □</div>
+                </div>
               </div>
             </div>
-
-            <table className="print-table">
-              <thead>
-                <tr>
-                  <th rowSpan={2} style={{ width: '13%' }}>月/日 (曜日)</th>
-                  <th colSpan={2}>午前</th>
-                  <th colSpan={2}>午後</th>
-                  <th rowSpan={2} style={{ width: '12%' }}>休憩時間計</th>
-                  <th rowSpan={2} style={{ width: '12%' }}>労働時間計</th>
-                  <th rowSpan={2} style={{ width: '10%' }}>承認印</th>
-                </tr>
-                <tr>
-                  <th>開始</th>
-                  <th>終了</th>
-                  <th>開始</th>
-                  <th>終了</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dailyData.map(d => {
-                  const dateObj = new Date(d.date);
-                  const days = ['日', '月', '火', '水', '木', '金', '土'];
-                  const dow = days[dateObj.getDay()];
-                  const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-
-                  return (
-                    <tr key={d.date} className={isWeekend ? 'weekend-row' : ''}>
-                      <td className="center">
-                        {dateObj.getDate()}日 ({dow})
-                      </td>
-                      <td className="center">{d.morningIn || ''}</td>
-                      <td className="center">{d.morningOut || ''}</td>
-                      <td className="center">{d.afternoonIn || ''}</td>
-                      <td className="center">{d.afternoonOut || ''}</td>
-                      <td className="center">{d.hasData ? minutesToDisplay(d.breakMinutes) : ''}</td>
-                      <td className="center">{d.hasData ? minutesToDisplay(d.minutes) : ''}</td>
-                      <td className="center">
-                        {d.approved && <div className="stamp-placeholder">承</div>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            <div className="print-footer-group">
-              <div className="print-footer">
-                <div className="footer-item">実働合計: <strong>{minutesToDisplay(summaries.find(s => s.emp.id === emp.id).totalMinutes)}</strong></div>
-                <div className="footer-item">休憩合計: <strong>{minutesToDisplay(summaries.find(s => s.emp.id === emp.id).totalBreakMinutes)}</strong></div>
-                <div className="footer-item">出勤日数: <strong>{summaries.find(s => s.emp.id === emp.id).workDays}日</strong></div>
-              </div>
-              <div className="print-footer second-footer">
-                <div className="footer-item">勤務 □</div>
-                <div className="footer-item">公休 □</div>
-                <div className="footer-item">休業 □</div>
-                <div className="footer-item">有給 □</div>
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <style>{`
