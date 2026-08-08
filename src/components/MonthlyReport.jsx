@@ -467,6 +467,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         .print-ym {
           font-size: 1.1rem;
           padding-bottom: 2px;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
         .ym-year, .ym-month {
           font-size: 1.3rem;
@@ -481,15 +483,19 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           flex-grow: 1;
           text-align: center;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .print-title.wage-title {
-          font-size: 1.25rem;
-          letter-spacing: 0.1em;
+          font-size: 1.15rem;
+          letter-spacing: 0.05em;
         }
         .print-name-box {
           font-size: 1rem;
-          min-width: 200px;
+          min-width: 160px;
           text-align: right;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
         .print-name {
           font-size: 1.3rem;
