@@ -343,7 +343,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                   <span className="ym-year">{y}</span>年
                   <span className="ym-month">{Number(m)}</span>月
                 </div>
-                <h1 className="print-title">{showWageMode ? '勤務計算表 (給与集計)' : '勤務表'}</h1>
+                <h1 className={`print-title ${showWageMode ? 'wage-title' : ''}`}>{showWageMode ? '勤務計算表 (給与集計)' : '勤務表'}</h1>
                 <div className="print-name-box">
                   氏名 <span className="print-name">{emp.name}</span>
                 </div>
@@ -474,12 +474,17 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           font-weight: bold;
         }
         .print-title {
-          font-size: 1.8rem;
+          font-size: 1.6rem;
           font-weight: normal;
-          letter-spacing: 0.5em;
+          letter-spacing: 0.35em;
           margin: 0;
           flex-grow: 1;
           text-align: center;
+          white-space: nowrap;
+        }
+        .print-title.wage-title {
+          font-size: 1.25rem;
+          letter-spacing: 0.1em;
         }
         .print-name-box {
           font-size: 1rem;
