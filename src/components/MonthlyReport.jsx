@@ -463,46 +463,46 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           margin-bottom: 2mm;
           border-bottom: 2px solid black;
           padding-bottom: 1mm;
+          white-space: nowrap;
         }
         .print-ym {
-          font-size: 1.1rem;
+          font-size: 0.95rem;
           padding-bottom: 2px;
           white-space: nowrap;
           flex-shrink: 0;
         }
         .ym-year, .ym-month {
-          font-size: 1.3rem;
+          font-size: 1.15rem;
           margin-right: 2px;
           font-weight: bold;
         }
         .print-title {
-          font-size: 1.6rem;
+          font-size: 1.4rem;
           font-weight: normal;
-          letter-spacing: 0.35em;
+          letter-spacing: 0.25em;
           margin: 0;
           flex-grow: 1;
           text-align: center;
           white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
         }
         .print-title.wage-title {
-          font-size: 1.15rem;
-          letter-spacing: 0.05em;
+          font-size: 1.05rem;
+          letter-spacing: normal;
+          font-weight: bold;
         }
         .print-name-box {
-          font-size: 1rem;
-          min-width: 160px;
+          font-size: 0.95rem;
           text-align: right;
           white-space: nowrap;
           flex-shrink: 0;
         }
         .print-name {
-          font-size: 1.3rem;
-          margin-left: 0.5rem;
+          font-size: 1.15rem;
+          margin-left: 0.4rem;
           border-bottom: 1px solid black;
-          padding: 0 1rem;
+          padding: 0 0.5rem;
           font-weight: bold;
+          white-space: nowrap;
         }
         .print-table {
           width: 100%;
