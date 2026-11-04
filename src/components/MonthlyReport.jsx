@@ -216,7 +216,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         </div>
       </header>
 
-      <main className="no-print" style={{ padding: '1rem' }}>
+      <main className="report-main no-print" style={{ padding: '1rem' }}>
         {/* 月選択 */}
         <div className="card" style={{ marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
@@ -397,6 +397,15 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                     );
                   })}
                 </tbody>
+                {showWageMode && emp.hourlyWage && (
+                  <tfoot className="wage-summary-row">
+                    <tr>
+                      <td colSpan={3}>{'\u52e4\u52d9\u65e5\u6570\u5408\u8a08: '}<strong>{workDays}{'\u65e5'}</strong></td>
+                      <td colSpan={3}>{'\u52e4\u52d9\u6642\u9593\u306e\u7dcf\u5408\u8a08: '}<strong>{minutesToDisplay(totalMinutes)}</strong></td>
+                      <td colSpan={3}>{'\u652f\u7d66\u984d\u7dcf\u5408\u8a08: '}<strong>{'\u00a5'}{totalWage.toLocaleString()}</strong></td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
 
               <div className="print-footer-group">
@@ -427,6 +436,17 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         .report-container {
           min-height: 100vh;
           background: #f8fafc;
+        }
+        .report-main {
+          width: min(100%, 1200px);
+          margin: 0 auto;
+          padding: 2rem 1.5rem !important;
+          box-sizing: border-box;
+        }
+        @media (max-width: 720px) {
+          .report-main {
+            padding: 1rem !important;
+          }
         }
         .print-content {
           padding: 2rem 0;
@@ -508,17 +528,23 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           width: 100%;
           border-collapse: collapse;
           border: 1.5px solid black;
-          margin-bottom: 5mm;
+          margin-bottom: 2mm;
         }
         .print-table th, .print-table td {
           border: 1px solid black;
-          height: 6.8mm; /* Reduced to fit 31 days nicely */
-          padding: 1px 4px;
-          font-size: 0.85rem;
+          height: 5.4mm;
+          padding: 0 3px;
+          font-size: 0.78rem;
         }
         .print-table th {
           background: #f1f5f9;
           font-weight: bold;
+        }
+        .wage-summary-row td {
+          background: #ecfdf5;
+          color: #065f46;
+          font-weight: bold;
+          white-space: nowrap;
         }
         .center { text-align: center; }
         .weekend-row { background: #f8fafc; }
@@ -541,6 +567,8 @@ export default function MonthlyReport({ onBack, initialMonth }) {
           margin-top: auto;
           border-top: 1px dashed #ccc;
           padding-top: 2mm;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-footer {
           display: flex;
@@ -570,7 +598,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
             box-shadow: none !important;
             margin: 0 !important;
             width: 100% !important;
-            height: 100% !important;
+            height: 296mm !important;
             break-after: page;
           }
           @page {
