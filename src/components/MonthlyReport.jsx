@@ -397,15 +397,6 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                     );
                   })}
                 </tbody>
-                {showWageMode && emp.hourlyWage && (
-                  <tfoot className="wage-summary-row">
-                    <tr>
-                      <td colSpan={3}>{'\u52e4\u52d9\u65e5\u6570\u5408\u8a08: '}<strong>{workDays}{'\u65e5'}</strong></td>
-                      <td colSpan={3}>{'\u52e4\u52d9\u6642\u9593\u306e\u7dcf\u5408\u8a08: '}<strong>{minutesToDisplay(totalMinutes)}</strong></td>
-                      <td colSpan={3}>{'\u652f\u7d66\u984d\u7dcf\u5408\u8a08: '}<strong>{'\u00a5'}{totalWage.toLocaleString()}</strong></td>
-                    </tr>
-                  </tfoot>
-                )}
               </table>
 
               <div className="print-footer-group">
@@ -539,12 +530,6 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         .print-table th {
           background: #f1f5f9;
           font-weight: bold;
-        }
-        .wage-summary-row td {
-          background: #ecfdf5;
-          color: #065f46;
-          font-weight: bold;
-          white-space: nowrap;
         }
         .center { text-align: center; }
         .weekend-row { background: #f8fafc; }
