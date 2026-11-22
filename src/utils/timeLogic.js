@@ -139,7 +139,13 @@ export function minutesToDisplay(totalMinutes) {
   return `${h}時間${m}分`;
 }
 
-// 1日の勤務時間を分単位で計算 (休憩を考慮)
+// 管理者が入力した追加休憩（分）を返す（未設定・不正値は 0）
+export function getExtraBreakMinutes(record) {
+  const v = Math.floor(Number(record?.extraBreakMinutes) || 0);
+  return v > 0 ? v : 0;
+}
+
+// 1日の勤務時間を分単位で計算 (休憩・追加休憩を考慮)
 export function calcDailyMinutes(record) {
   const norm = normalizeRecord(record);
   const startTime = norm?.morningIn || norm?.afternoonIn;
@@ -161,18 +167,23 @@ export function calcDailyMinutes(record) {
       total -= bDiff;
     }
   }
+
+  // 管理者が入力した追加休憩を引く
+  total -= getExtraBreakMinutes(norm);
   
   return total > 0 ? total : 0;
 }
 
-// 休憩時間を分単位で計算 (morningOut 〜 afternoonIn)
+// 休憩時間を分単位で計算 (morningOut 〜 afternoonIn + 追加休憩)
 export function calcBreakMinutes(record) {
   const norm = normalizeRecord(record);
-  if (!norm || !norm.morningOut || !norm.afternoonIn || !norm.morningIn) return 0;
-  const bStart = timeToMinutes(norm.morningOut);
-  const bEnd = timeToMinutes(norm.afternoonIn);
-  const diff = bEnd - bStart;
-  return diff > 0 ? diff : 0;
+  if (!norm) return 0;
+  let regular = 0;
+  if (norm.morningOut && norm.afternoonIn && norm.morningIn) {
+    const diff = timeToMinutes(norm.afternoonIn) - timeToMinutes(norm.morningOut);
+    if (diff > 0) regular = diff;
+  }
+  return regular + getExtraBreakMinutes(norm);
 }
 
 // 月間の合計勤務時間を分単位で計算

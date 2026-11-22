@@ -5,6 +5,7 @@ import { getEmployees, getRecords } from '../utils/storage';
 import {
   calcDailyMinutes,
   calcBreakMinutes,
+  getExtraBreakMinutes,
   minutesToDisplay,
   formatDateJP,
   normalizeRecord,
@@ -57,6 +58,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       const rec = normalizeRecord(rawRec);
       const minutes = rec ? calcDailyMinutes(rec) : 0;
       const breakMinutes = rec ? calcBreakMinutes(rec) : 0;
+      const extraBreakMinutes = rec ? getExtraBreakMinutes(rec) : 0;
       const dailyWage = (rec && emp.hourlyWage) ? calcWage(minutes, emp.hourlyWage) : 0;
       return {
         date,
@@ -66,6 +68,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         afternoonOut: rec?.afternoonOut || '',
         minutes,
         breakMinutes,
+        extraBreakMinutes,
         dailyWage,
         approved: rec?.approved || false,
         hasData: !!rec,
@@ -73,10 +76,16 @@ export default function MonthlyReport({ onBack, initialMonth }) {
     });
     const totalMinutes = dailyData.reduce((s, d) => s + d.minutes, 0);
     const totalBreakMinutes = dailyData.reduce((s, d) => s + d.breakMinutes, 0);
+    const totalExtraBreakMinutes = dailyData.reduce((s, d) => s + d.extraBreakMinutes, 0);
     const totalWage = dailyData.reduce((s, d) => s + d.dailyWage, 0);
     const workDays = dailyData.filter(d => d.hasData).length;
-    return { emp, dailyData, totalMinutes, totalBreakMinutes, totalWage, workDays };
+    return { emp, dailyData, totalMinutes, totalBreakMinutes, totalExtraBreakMinutes, totalWage, workDays };
   }).filter(s => s.workDays > 0);
+
+  // 休憩時間計の表示（追加休憩がある日は「うち追加○分」を付記）
+  const breakText = (d) => d.extraBreakMinutes > 0
+    ? `${minutesToDisplay(d.breakMinutes)}（うち追加${minutesToDisplay(d.extraBreakMinutes)}）`
+    : minutesToDisplay(d.breakMinutes);
 
   // CSV ダウンロード
   const downloadCSV = () => {
@@ -96,7 +105,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
             d.morningOut,
             d.afternoonIn,
             d.afternoonOut,
-            minutesToDisplay(d.breakMinutes),
+            breakText(d),
             minutesToDisplay(d.minutes),
             d.dailyWage,
             d.approved ? '承認済み' : '未承認',
@@ -109,7 +118,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
             d.morningOut,
             d.afternoonIn,
             d.afternoonOut,
-            minutesToDisplay(d.breakMinutes),
+            breakText(d),
             minutesToDisplay(d.minutes),
             d.approved ? '承認済み' : '未承認',
           ]);
@@ -332,7 +341,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
       {/* 印刷用プレビュー / 実際の印刷内容 */}
       <div className="print-content">
         {summaries.map(s => {
-          const { emp, dailyData, totalMinutes, totalBreakMinutes, totalWage, workDays } = s;
+          const { emp, dailyData, totalMinutes, totalBreakMinutes, totalExtraBreakMinutes, totalWage, workDays } = s;
           return (
             <div key={emp.id} 
               className={`print-page ${(!selectedEmpId || selectedEmpId === emp.id) ? 'is-active' : ''}`} 
@@ -383,7 +392,14 @@ export default function MonthlyReport({ onBack, initialMonth }) {
                         <td className="center">{d.morningOut || ''}</td>
                         <td className="center">{d.afternoonIn || ''}</td>
                         <td className="center">{d.afternoonOut || ''}</td>
-                        <td className="center">{d.hasData ? minutesToDisplay(d.breakMinutes) : ''}</td>
+                        <td className="center">
+                          {d.hasData && d.extraBreakMinutes > 0 ? (
+                            <div className="extra-break-cell">
+                              <div>{minutesToDisplay(d.breakMinutes)}</div>
+                              <div className="extra-break-note">うち追加{minutesToDisplay(d.extraBreakMinutes)}</div>
+                            </div>
+                          ) : (d.hasData ? minutesToDisplay(d.breakMinutes) : '')}
+                        </td>
                         <td className="center">{d.hasData ? minutesToDisplay(d.minutes) : ''}</td>
                         {showWageMode && (
                           <td className="center" style={{ fontWeight: d.dailyWage > 0 ? 'bold' : 'normal' }}>
@@ -402,7 +418,7 @@ export default function MonthlyReport({ onBack, initialMonth }) {
               <div className="print-footer-group">
                 <div className="print-footer" style={{ flexWrap: 'wrap', gap: '1.2rem' }}>
                   <div className="footer-item">実働合計: <strong>{minutesToDisplay(totalMinutes)}</strong></div>
-                  <div className="footer-item">休憩合計: <strong>{minutesToDisplay(totalBreakMinutes)}</strong></div>
+                  <div className="footer-item">休憩合計: <strong>{minutesToDisplay(totalBreakMinutes)}</strong>{totalExtraBreakMinutes > 0 && <span className="extra-break-note-inline">（うち追加休憩 {minutesToDisplay(totalExtraBreakMinutes)}）</span>}</div>
                   <div className="footer-item">出勤日数: <strong>{workDays}日</strong></div>
                   {showWageMode && (
                     <>
@@ -533,6 +549,9 @@ export default function MonthlyReport({ onBack, initialMonth }) {
         }
         .center { text-align: center; }
         .weekend-row { background: #f8fafc; }
+        .extra-break-cell { font-size: 0.68rem; line-height: 1; white-space: nowrap; }
+        .extra-break-note { font-size: 0.55rem; color: #c2410c; line-height: 1; white-space: nowrap; }
+        .extra-break-note-inline { font-size: 0.85em; color: #c2410c; margin-left: 0.2em; }
         
         .stamp-placeholder {
           width: 22px;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Calendar, Edit2, Save, X, BarChart2, QrCode, Trash2, PlusCircle, Coins } from 'lucide-react';
 import { getEmployees, getRecords, approveRecord, unapproveRecord, upsertRecord, deleteRecord, deleteEmployee, updateEmployee } from '../utils/storage';
-import { formatDateJP, calcDailyMinutes, calcBreakMinutes, minutesToDisplay, normalizeRecord, calcWage } from '../utils/timeLogic';
+import { formatDateJP, calcDailyMinutes, calcBreakMinutes, minutesToDisplay, normalizeRecord, calcWage, getExtraBreakMinutes } from '../utils/timeLogic';
 
 const TIME_FIELDS = [
   { key: 'morningIn',    label: '午前 開始' },
@@ -124,6 +124,8 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
       morningOut:   norm.morningOut   || '',
       afternoonIn:  norm.afternoonIn  || '',
       afternoonOut: norm.afternoonOut || '',
+      extraBreakMinutes: getExtraBreakMinutes(norm) || '',
+      extraBreakNote: norm.extraBreakNote || '',
     });
   };
 
@@ -135,12 +137,20 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
   const saveEdit = async (record) => {
     // "00:00" はフォームの空欄デフォルト値のため null 扱いにする
     const clean = (v) => (!v || v === '00:00') ? null : v;
+    const extraRaw = String(editValues.extraBreakMinutes ?? '').trim();
+    const extra = extraRaw === '' ? 0 : Number(extraRaw);
+    if (!Number.isInteger(extra) || extra < 0) {
+      alert('追加休憩は0以上の整数（分）で入力してください。');
+      return;
+    }
     const updated = {
       ...record,
       morningIn:    clean(editValues.morningIn),
       morningOut:   clean(editValues.morningOut),
       afternoonIn:  clean(editValues.afternoonIn),
       afternoonOut: clean(editValues.afternoonOut),
+      extraBreakMinutes: extra,
+      extraBreakNote: extra > 0 ? String(editValues.extraBreakNote || '').trim() : '',
     };
     await upsertRecord(updated);
     setEditingKey(null);
@@ -429,6 +439,34 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
                         </div>
                       ))}
                     </div>
+                    <div style={{ marginTop: '0.75rem', padding: '0.6rem', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '0.5rem' }}>
+                      <p style={{ fontSize: '0.7rem', color: '#c2410c', fontWeight: 700, marginBottom: '0.4rem' }}>☕ 追加休憩（会社指示・管理者のみ入力）</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.5rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>分数</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            inputMode="numeric"
+                            placeholder="例: 30"
+                            value={editValues.extraBreakMinutes}
+                            onChange={e => setEditValues(v => ({ ...v, extraBreakMinutes: e.target.value }))}
+                            style={{ width: '100%', padding: '0.4rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>理由（任意）</label>
+                          <input
+                            type="text"
+                            placeholder="例: 機械トラブル待機"
+                            value={editValues.extraBreakNote}
+                            onChange={e => setEditValues(v => ({ ...v, extraBreakNote: e.target.value }))}
+                            style={{ width: '100%', padding: '0.4rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                       <button
                         onClick={() => saveEdit(record)}
@@ -449,6 +487,11 @@ export default function AdminDashboard({ onBack, onViewQRCode, onViewReport }) {
                     <div style={{ padding: '0.6rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
                       <p style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>午前：{normRecord.morningIn || '--:--'} 〜 {normRecord.morningOut || '--:--'}</p>
                       <p style={{ color: 'var(--text-muted)' }}>午後：{normRecord.afternoonIn || '--:--'} 〜 {normRecord.afternoonOut || '--:--'}</p>
+                      {getExtraBreakMinutes(normRecord) > 0 && (
+                        <p style={{ marginTop: '0.35rem', display: 'inline-block', padding: '0.1rem 0.45rem', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700 }}>
+                          ☕ 追加休憩 {minutesToDisplay(getExtraBreakMinutes(normRecord))}{normRecord.extraBreakNote ? `（${normRecord.extraBreakNote}）` : ''}
+                        </p>
+                      )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#eff6ff', borderRadius: '0.5rem', border: '1px solid #dbeafe', padding: '0.4rem' }}>
                       <span style={{ fontSize: '0.65rem', color: 'var(--primary)' }}>実労働時間</span>
